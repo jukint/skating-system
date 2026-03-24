@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Система Скейтинга - Расчёт танцевальных соревнований</title>
+    <title>Система Скейтинга - WDSF</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -13,14 +13,18 @@
         .input-field:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); outline: none; }
         .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); transition: all 0.3s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4); }
+        .judge-col { width: 80px; min-width: 80px; max-width: 80px; }
+        .name-col { width: 250px; min-width: 200px; }
         .result-card { animation: slideIn 0.5s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .tie-highlight { background: rgba(234, 179, 8, 0.2); border: 1px solid rgba(234, 179, 8, 0.5); }
         .winner-gold { background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #1a1a1a; }
         .winner-silver { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); color: #1a1a1a; }
         .winner-bronze { background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%); color: #1a1a1a; }
-        .scroll-hide::-webkit-scrollbar { display: none; }
-        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scroll-hide::-webkit-scrollbar { height: 8px; }
+        .scroll-hide::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .scroll-hide::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 4px; }
+        .calculation-step { border-left: 3px solid #6366f1; padding-left: 1rem; margin: 0.5rem 0; }
+        .majority-highlight { background: rgba(99, 102, 241, 0.2); border-radius: 4px; padding: 2px 6px; }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -29,9 +33,9 @@
         <!-- Header -->
         <div class="text-center mb-10">
             <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-                Система Скейтинга
+                Система Скейтинга WDSF
             </h1>
-            <p class="text-slate-400 text-lg">Профессиональный расчёт танцевальных соревнований по правилам WDSF</p>
+            <p class="text-slate-400 text-lg">Полная реализация всех 11 правил</p>
         </div>
 
         <!-- Setup Panel -->
@@ -40,72 +44,59 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Количество участников</label>
                     <input type="number" id="participantCount" min="2" max="20" value="6" 
-                           class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-500" 
-                           onchange="updateParticipants()">
+                           class="input-field w-full px-4 py-3 rounded-xl text-white" 
+                           onchange="init()">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Количество судей</label>
                     <input type="number" id="judgeCount" min="3" max="11" value="5" 
-                           class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-500"
-                           onchange="updateJudges()">
+                           class="input-field w-full px-4 py-3 rounded-xl text-white"
+                           onchange="init()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Количество туров (танцев)</label>
-                    <input type="number" id="roundCount" min="1" max="5" value="1" 
-                           class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-500"
-                           onchange="updateRounds()">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Количество танцев</label>
+                    <input type="number" id="danceCount" min="1" max="5" value="1" 
+                           class="input-field w-full px-4 py-3 rounded-xl text-white"
+                           onchange="init()">
                 </div>
                 <div class="flex items-end">
-                    <button onclick="calculateResults()" 
+                    <button onclick="calculateAll()" 
                             class="btn-primary w-full py-3 rounded-xl font-bold text-white shadow-lg">
-                        🏆 Рассчитать результаты
+                        🏆 Рассчитать
                     </button>
                 </div>
             </div>
             
-            <!-- Tabs for Rounds -->
-            <div class="flex space-x-2 mb-4 overflow-x-auto scroll-hide" id="roundTabs">
-                <!-- Generated dynamically -->
-            </div>
+            <!-- Tabs for Dances -->
+            <div class="flex space-x-2 mb-4 overflow-x-auto scroll-hide pb-2" id="danceTabs"></div>
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- Input Section -->
             <div class="lg:col-span-2">
                 <div class="glass rounded-2xl p-6">
-                    <h2 class="text-2xl font-bold mb-6 text-indigo-300 flex items-center">
-                        <span id="currentRoundTitle">Тур 1</span>
-                        <span class="ml-3 text-sm font-normal text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
-                            Введите места от судей
-                        </span>
-                    </h2>
+                    <h2 class="text-2xl font-bold mb-6 text-indigo-300" id="currentDanceTitle">Танец 1</h2>
                     
-                    <div class="overflow-x-auto">
-                        <table class="w-full" id="inputTable">
+                    <div class="overflow-x-auto scroll-hide">
+                        <table class="w-full border-collapse" id="inputTable">
                             <thead>
                                 <tr class="border-b border-slate-700">
-                                    <th class="text-left p-3 text-slate-400 font-medium">№</th>
-                                    <th class="text-left p-3 text-slate-400 font-medium">ФИО Участника</th>
-                                    <th class="text-center p-3 text-slate-400 font-medium" id="judgeHeaders">
-                                        <!-- Judge headers generated dynamically -->
-                                    </th>
+                                    <th class="name-col text-left p-3 text-slate-400 font-medium">ФИО Участника</th>
+                                    <th id="judgeHeaders" class="flex"></th>
                                 </tr>
                             </thead>
-                            <tbody id="participantsBody">
-                                <!-- Generated dynamically -->
-                            </tbody>
+                            <tbody id="participantsBody"></tbody>
                         </table>
                     </div>
 
                     <div class="mt-6 flex justify-between items-center">
-                        <button onclick="clearCurrentRound()" 
-                                class="px-6 py-2 rounded-xl border border-slate-600 text-slate-400 hover:bg-slate-800 transition">
-                            Очистить текущий тур
+                        <button onclick="clearCurrentDance()" class="px-6 py-2 rounded-xl border border-slate-600 text-slate-400 hover:bg-slate-800 transition">
+                            Очистить
                         </button>
                         <div class="text-sm text-slate-500">
-                            * Места должны быть уникальны для каждого судьи (1-{{participantCount}})
+                            Места: 1-<span id="maxPlace">6</span> для каждого судьи (без повторов)
                         </div>
                     </div>
                 </div>
@@ -113,115 +104,95 @@
 
             <!-- Results Section -->
             <div class="lg:col-span-1">
-                <div class="glass rounded-2xl p-6 sticky top-4">
-                    <h2 class="text-2xl font-bold mb-6 text-emerald-300">Итоговые результаты</h2>
+                <div class="glass rounded-2xl p-6 sticky top-4 max-h-screen overflow-y-auto">
+                    <h2 class="text-2xl font-bold mb-6 text-emerald-300">Результаты</h2>
                     <div id="finalResults" class="space-y-3">
-                        <div class="text-center text-slate-500 py-8">
-                            Введите данные и нажмите "Рассчитать результаты"
-                        </div>
+                        <div class="text-center text-slate-500 py-8">Введите данные и нажмите "Рассчитать"</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Detailed Calculation Log -->
+        <!-- Detailed Log -->
         <div id="calculationLog" class="mt-8 glass rounded-2xl p-6 hidden">
-            <h3 class="text-xl font-bold mb-4 text-purple-300">Детальный расчёт по правилам скейтинга</h3>
-            <div id="logContent" class="space-y-4 text-sm font-mono text-slate-300"></div>
+            <h3 class="text-xl font-bold mb-4 text-purple-300">Протокол расчёта</h3>
+            <div id="logContent" class="space-y-4 text-sm text-slate-300"></div>
         </div>
     </div>
 
     <script>
-        let currentRound = 0;
-        let roundsData = [];
+        let currentDance = 0;
+        let dancesData = [];
         let participants = [];
         let judges = 5;
 
         function init() {
-            updateParticipants();
-            updateJudges();
-            updateRounds();
-        }
-
-        function updateParticipants() {
-            const count = parseInt(document.getElementById('participantCount').value) || 6;
-            participants = Array.from({length: count}, (_, i) => ({
-                id: i + 1,
-                name: `Участник ${i + 1}`,
-                number: i + 1
-            }));
-            renderTable();
-            if (roundsData.length > 0) renderRoundTabs();
-        }
-
-        function updateJudges() {
+            const pCount = parseInt(document.getElementById('participantCount').value) || 6;
             judges = parseInt(document.getElementById('judgeCount').value) || 5;
-            renderTable();
-        }
+            const dCount = parseInt(document.getElementById('danceCount').value) || 1;
+            
+            document.getElementById('maxPlace').textContent = pCount;
+            
+            // Initialize participants
+            participants = Array.from({length: pCount}, (_, i) => ({
+                id: i,
+                name: `Участник ${i + 1}`
+            }));
 
-        function updateRounds() {
-            const count = parseInt(document.getElementById('roundCount').value) || 1;
-            // Initialize rounds data structure
-            while (roundsData.length < count) {
-                roundsData.push({
+            // Initialize dances data
+            dancesData = [];
+            for (let d = 0; d < dCount; d++) {
+                dancesData.push({
                     participants: participants.map(p => ({
-                        ...p,
+                        id: p.id,
+                        name: p.name,
                         places: new Array(judges).fill(1)
                     }))
                 });
             }
-            if (roundsData.length > count) {
-                roundsData = roundsData.slice(0, count);
-            }
-            currentRound = Math.min(currentRound, count - 1);
-            renderRoundTabs();
+
+            currentDance = 0;
+            renderDanceTabs();
             renderTable();
         }
 
-        function renderRoundTabs() {
-            const container = document.getElementById('roundTabs');
-            const count = parseInt(document.getElementById('roundCount').value) || 1;
+        function renderDanceTabs() {
+            const container = document.getElementById('danceTabs');
+            const dCount = dancesData.length;
             
             let html = '';
-            for (let i = 0; i < count; i++) {
-                const isActive = i === currentRound;
-                const hasData = roundsData[i] && roundsData[i].participants.some(p => 
-                    p.places.some(place => place !== 1 || document.querySelector(`input[data-round="${i}"]`))
-                );
-                
+            for (let i = 0; i < dCount; i++) {
+                const isActive = i === currentDance;
                 html += `
-                    <button onclick="switchRound(${i})" 
+                    <button onclick="switchDance(${i})" 
                             class="px-6 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${isActive ? 
                                 'bg-indigo-600 text-white shadow-lg' : 
-                                'bg-slate-800 text-slate-400 hover:bg-slate-700'} ${hasData ? 'border border-emerald-500/50' : ''}">
-                        Тур ${i + 1} ${hasData ? '✓' : ''}
+                                'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
+                        Танец ${i + 1}
                     </button>
                 `;
             }
             container.innerHTML = html;
-            document.getElementById('currentRoundTitle').textContent = `Тур ${currentRound + 1}`;
+            document.getElementById('currentDanceTitle').textContent = `Танец ${currentDance + 1}`;
         }
 
-        function switchRound(index) {
-            // Save current round data before switching
-            saveCurrentRoundData();
-            currentRound = index;
-            renderRoundTabs();
+        function switchDance(index) {
+            saveCurrentData();
+            currentDance = index;
+            renderDanceTabs();
             renderTable();
         }
 
-        function saveCurrentRoundData() {
+        function saveCurrentData() {
             const rows = document.querySelectorAll('#participantsBody tr');
-            if (!roundsData[currentRound]) {
-                roundsData[currentRound] = { participants: [] };
-            }
+            if (!dancesData[currentDance]) return;
             
-            roundsData[currentRound].participants = Array.from(rows).map((row, idx) => {
-                const inputs = row.querySelectorAll('input[type="number"]');
-                return {
-                    ...participants[idx],
-                    places: Array.from(inputs).map(input => parseInt(input.value) || 1)
-                };
+            rows.forEach((row, idx) => {
+                const inputs = row.querySelectorAll('.judge-input');
+                dancesData[currentDance].participants[idx].places = 
+                    Array.from(inputs).map(input => parseInt(input.value) || 1);
+                dancesData[currentDance].participants[idx].name = 
+                    row.querySelector('.name-input').value;
             });
         }
 
@@ -229,256 +200,312 @@
             const tbody = document.getElementById('participantsBody');
             const judgeHeaders = document.getElementById('judgeHeaders');
             
-            // Render judge headers
+            // Render judge headers with fixed width
             let headersHtml = '';
             for (let j = 0; j < judges; j++) {
-                headersHtml += `<th class="text-center p-2 text-xs text-indigo-400">Судья ${String.fromCharCode(65 + j)}</th>`;
+                headersHtml += `<th class="judge-col text-center p-2 text-xs text-indigo-400 font-medium">Судья ${String.fromCharCode(65 + j)}</th>`;
             }
             judgeHeaders.innerHTML = headersHtml;
 
-            // Render participant rows
+            // Render rows
+            const data = dancesData[currentDance]?.participants || participants;
             let html = '';
-            const currentData = roundsData[currentRound]?.participants || participants.map(p => ({
-                ...p,
-                places: new Array(judges).fill(1)
-            }));
 
-            currentData.forEach((participant, idx) => {
-                html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
-                        <td class="p-3">
-                            <input type="number" value="${participant.number}" 
-                                   class="input-field w-16 px-2 py-2 rounded-lg text-center text-white"
-                                   onchange="updateParticipantNumber(${idx}, this.value)"
-                                   placeholder="№">
-                        </td>
-                        <td class="p-3">
-                            <input type="text" value="${participant.name}" 
-                                   class="input-field w-full px-3 py-2 rounded-lg text-white"
-                                   onchange="updateParticipantName(${idx}, this.value)"
-                                   placeholder="ФИО">
-                        </td>
-                `;
+            data.forEach((p, idx) => {
+                html += `<tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">`;
+                html += `<td class="name-col p-3">
+                    <input type="text" value="${p.name}" 
+                           class="name-input input-field w-full px-3 py-2 rounded-lg text-white"
+                           placeholder="ФИО участника">
+                </td>`;
                 
                 for (let j = 0; j < judges; j++) {
-                    html += `
-                        <td class="p-2">
-                            <input type="number" min="1" max="${participants.length}" 
-                                   value="${participant.places[j] || 1}"
-                                   class="input-field w-full px-2 py-2 rounded-lg text-center text-white"
-                                   data-round="${currentRound}"
-                                   data-participant="${idx}"
-                                   data-judge="${j}"
-                                   onchange="validateAndSave(this)">
-                        </td>
-                    `;
+                    html += `<td class="judge-col p-2">
+                        <input type="number" min="1" max="${participants.length}" 
+                               value="${p.places?.[j] || 1}"
+                               class="judge-input input-field w-full px-2 py-2 rounded-lg text-center text-white"
+                               onchange="validateInput(this)">
+                    </td>`;
                 }
-                
-                html += '</tr>';
+                html += `</tr>`;
             });
             
             tbody.innerHTML = html;
         }
 
-        function updateParticipantNumber(idx, value) {
-            if (roundsData[currentRound]) {
-                roundsData[currentRound].participants[idx].number = parseInt(value) || (idx + 1);
-            }
-            participants[idx].number = parseInt(value) || (idx + 1);
-        }
-
-        function updateParticipantName(idx, value) {
-            if (roundsData[currentRound]) {
-                roundsData[currentRound].participants[idx].name = value;
-            }
-            participants[idx].name = value;
-        }
-
-        function validateAndSave(input) {
-            let val = parseInt(input.value);
+        function validateInput(input) {
             const max = participants.length;
-            
+            let val = parseInt(input.value) || 1;
             if (val < 1) val = 1;
             if (val > max) val = max;
-            
             input.value = val;
-            saveCurrentRoundData();
             
-            // Visual feedback
-            input.classList.add('border-emerald-500');
-            setTimeout(() => input.classList.remove('border-emerald-500'), 300);
+            // Check for duplicates in same row
+            const row = input.closest('tr');
+            const inputs = row.querySelectorAll('.judge-input');
+            const values = Array.from(inputs).map(i => parseInt(i.value));
+            
+            const duplicates = values.filter((item, index) => values.indexOf(item) !== index);
+            if (duplicates.length > 0) {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 1000);
+            }
         }
 
-        function clearCurrentRound() {
-            if (confirm('Очистить все данные текущего тура?')) {
-                roundsData[currentRound] = {
-                    participants: participants.map(p => ({
-                        ...p,
-                        places: new Array(judges).fill(1)
-                    }))
-                };
+        function clearCurrentDance() {
+            if (confirm('Очистить данные текущего танца?')) {
+                dancesData[currentDance].participants = participants.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    places: new Array(judges).fill(1)
+                }));
                 renderTable();
             }
         }
 
-        // ==================== SKATING SYSTEM CALCULATION ====================
+        // ==================== SKATING SYSTEM ALL 11 RULES ====================
 
-        function calculateResults() {
-            saveCurrentRoundData();
+        function calculateAll() {
+            saveCurrentData();
             
-            const roundCount = parseInt(document.getElementById('roundCount').value) || 1;
-            const judgeCount = parseInt(document.getElementById('judgeCount').value) || 5;
-            const majorityNeeded = Math.floor(judgeCount / 2) + 1;
+            const danceCount = dancesData.length;
+            const judgeCount = judges;
+            const majority = Math.floor(judgeCount / 2) + 1;
             
-            let logHtml = `<div class="mb-4 p-4 bg-slate-800 rounded-lg">
-                <strong class="text-indigo-400">Начало расчёта:</strong><br>
-                Участников: ${participants.length}, Судей: ${judgeCount}, Туров: ${roundCount}<br>
-                Необходимое большинство: ${majorityNeeded} из ${judgeCount}
+            let logHtml = `<div class="p-4 bg-slate-800 rounded-lg mb-4">
+                <strong class="text-indigo-400">Параметры:</strong> 
+                ${participants.length} участников, ${judgeCount} судей, ${danceCount} танцев.<br>
+                <strong>Необходимое большинство:</strong> ${majority} из ${judgeCount}
             </div>`;
 
-            // Calculate results for each round
-            const roundResults = [];
+            // Calculate each dance (Rules 5-8)
+            const danceResults = [];
             
-            for (let r = 0; r < roundCount; r++) {
-                const data = roundsData[r];
-                if (!data) continue;
-
-                logHtml += `<div class="mt-4 p-4 bg-slate-800/50 rounded-lg border-l-4 border-indigo-500">
-                    <h4 class="font-bold text-indigo-300 mb-2">Тур ${r + 1}:</h4>`;
-
-                // Apply skating rules for this round
-                const results = calculateRoundPlaces(data.participants, judgeCount, majorityNeeded, logHtml);
-                roundResults.push(results);
+            for (let d = 0; d < danceCount; d++) {
+                logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg">`;
+                logHtml += `<h4 class="font-bold text-indigo-300 mb-3 text-lg">Танец ${d + 1} (Правила 5-8)</h4>`;
                 
+                const results = calculateSingleDance(dancesData[d].participants, judgeCount, majority, logHtml);
+                danceResults.push(results);
                 logHtml += `</div>`;
             }
 
-            // Calculate final placements across all rounds (Rule 9)
-            const finalPlacements = calculateFinalPlacements(roundResults, roundCount);
+            // Calculate final placement (Rules 9-11)
+            logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg border-t-2 border-purple-500">`;
+            logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">Итоговое место (Правила 9-11)</h4>`;
             
-            // Display results
-            displayFinalResults(finalPlacements);
-            
-            // Show log
+            const finalResults = calculateFinalPlacement(danceResults, danceCount, judgeCount, logHtml);
+            logHtml += `</div>`;
+
+            displayResults(finalResults);
             document.getElementById('calculationLog').classList.remove('hidden');
             document.getElementById('logContent').innerHTML = logHtml;
         }
 
-        function calculateRoundPlaces(participants, judgeCount, majorityNeeded, logRef) {
-            // Create array of participant results
-            let results = participants.map(p => ({
+        function calculateSingleDance(participants, judgeCount, majority, logRef) {
+            // Create working copy with sorted places
+            let dancers = participants.map(p => ({
                 ...p,
-                places: [...p.places],
+                sortedPlaces: [...p.places].sort((a, b) => a - b),
                 finalPlace: 0,
-                skatingMarks: []
+                calculation: []
             }));
 
-            // Sort places for each participant
-            results.forEach(r => {
-                r.places.sort((a, b) => a - b);
-            });
-
-            // Rule 5-8: Skating system for single dance
-            const assignedPlaces = new Set();
+            const placed = new Set();
             let currentPlace = 1;
 
-            while (assignedPlaces.size < results.length) {
-                // Find candidates for current place
-                const candidates = results.filter(r => !assignedPlaces.has(r.number));
+            logRef += `<div class="calculation-step">`;
+
+            while (placed.size < dancers.length) {
+                const remaining = dancers.filter(d => !placed.has(d.id));
                 
-                // Check column "1" first, then "1-2", etc.
-                let found = false;
+                // Try columns 1, 1-2, 1-3, etc.
+                let placedThisRound = false;
                 
                 for (let col = 1; col <= judgeCount; col++) {
-                    // Count how many places <= col each candidate has
-                    const counts = candidates.map(c => ({
-                        participant: c,
-                        count: c.places.filter(p => p <= col).length,
-                        sum: c.places.filter(p => p <= col).reduce((a, b) => a + b, 0)
-                    }));
+                    // Count places <= col for each remaining dancer
+                    const stats = remaining.map(d => {
+                        const places = d.sortedPlaces.filter(p => p <= col);
+                        return {
+                            dancer: d,
+                            count: places.length,
+                            sum: places.reduce((a, b) => a + b, 0)
+                        };
+                    });
 
                     // Filter those with majority
-                    const withMajority = counts.filter(c => c.count >= majorityNeeded);
+                    const withMajority = stats.filter(s => s.count >= majority);
                     
-                    if (withMajority.length > 0) {
-                        // Sort by count (desc), then by sum (asc) - Rule 6 & 7
-                        withMajority.sort((a, b) => {
-                            if (b.count !== a.count) return b.count - a.count;
-                            return a.sum - b.sum;
-                        });
+                    if (withMajority.length === 0) continue;
 
-                        // Assign places
-                        for (const item of withMajority) {
-                            if (!assignedPlaces.has(item.participant.number)) {
-                                item.participant.finalPlace = currentPlace;
-                                item.participant.skatingMarks.push({
-                                    column: `1-${col}`,
-                                    count: item.count,
-                                    sum: item.sum
-                                });
-                                assignedPlaces.add(item.participant.number);
-                                currentPlace++;
-                                found = true;
-                            }
+                    // Rule 6: Different majorities - sort by count desc
+                    // Rule 7: Equal majorities - sort by sum asc
+                    withMajority.sort((a, b) => {
+                        if (b.count !== a.count) return b.count - a.count;
+                        return a.sum - b.sum;
+                    });
+
+                    // Check for ties in sum (Rule 7b)
+                    const groups = [];
+                    let currentGroup = [withMajority[0]];
+                    
+                    for (let i = 1; i < withMajority.length; i++) {
+                        if (withMajority[i].count === currentGroup[0].count && 
+                            withMajority[i].sum === currentGroup[0].sum) {
+                            currentGroup.push(withMajority[i]);
+                        } else {
+                            groups.push([...currentGroup]);
+                            currentGroup = [withMajority[i]];
                         }
-                        break;
                     }
+                    groups.push(currentGroup);
+
+                    // Process groups
+                    for (const group of groups) {
+                        if (group.length === 1) {
+                            // No tie - assign place
+                            const winner = group[0].dancer;
+                            winner.finalPlace = currentPlace;
+                            winner.calculation.push({
+                                rule: '5/6',
+                                column: `1-${col}`,
+                                count: group[0].count,
+                                sum: group[0].sum
+                            });
+                            placed.add(winner.id);
+                            currentPlace++;
+                            placedThisRound = true;
+                            
+                            logRef += `<div>Место ${winner.finalPlace}: ${winner.name} 
+                                (колонка 1-${col}, голосов: ${group[0].count}, сумма: ${group[0].sum})</div>`;
+                        } else {
+                            // Tie - need further analysis (Rule 7b)
+                            const resolved = resolveTie(group, col, judgeCount, majority, currentPlace, logRef);
+                            for (const r of resolved) {
+                                placed.add(r.dancer.id);
+                                currentPlace++;
+                            }
+                            placedThisRound = true;
+                        }
+                    }
+                    
+                    if (placedThisRound) break;
                 }
 
-                // Rule 8: If no majority found (unlikely but possible)
-                if (!found && candidates.length > 0) {
-                    // Average the remaining places
-                    const avgPlace = candidates.reduce((sum, c) => sum + currentPlace, 0) / candidates.length;
-                    candidates.forEach(c => {
-                        c.finalPlace = avgPlace;
-                        assignedPlaces.add(c.number);
+                // Rule 8: If no majority found in any column
+                if (!placedThisRound && remaining.length > 0) {
+                    const avg = remaining.reduce((sum, _, i) => sum + currentPlace + i, 0) / remaining.length;
+                    remaining.forEach(d => {
+                        d.finalPlace = avg;
+                        d.calculation.push({ rule: 8, value: avg });
+                        placed.add(d.id);
                     });
-                    currentPlace += candidates.length;
+                    logRef += `<div>Правило 8: Среднее место ${avg} для ${remaining.length} участников</div>`;
+                    break;
                 }
             }
 
-            return results.map(r => ({
-                number: r.number,
-                name: r.name,
-                place: r.finalPlace,
-                places: r.places
+            logRef += `</div>`;
+            return dancers.map(d => ({
+                id: d.id,
+                name: d.name,
+                place: d.finalPlace,
+                places: d.places
             }));
         }
 
-        function calculateFinalPlacements(roundResults, roundCount) {
-            if (roundCount === 1) {
-                return roundResults[0].map(r => ({
+        function resolveTie(group, currentCol, judgeCount, majority, startPlace, logRef) {
+            // Rule 7b: Look at next columns for tied dancers only
+            let col = currentCol + 1;
+            const tiedDancers = group.map(g => g.dancer);
+            
+            while (col <= judgeCount) {
+                const stats = tiedDancers.map(d => {
+                    const places = d.sortedPlaces.filter(p => p <= col);
+                    return {
+                        dancer: d,
+                        count: places.length,
+                        sum: places.reduce((a, b) => a + b, 0)
+                    };
+                });
+
+                // Sort by count desc, then sum asc
+                stats.sort((a, b) => {
+                    if (b.count !== a.count) return b.count - a.count;
+                    return a.sum - b.sum;
+                });
+
+                // Check if we can differentiate
+                if (stats[0].count > stats[1]?.count || 
+                    (stats[0].count === stats[1]?.count && stats[0].sum < stats[1]?.sum)) {
+                    
+                    // Can differentiate
+                    const result = [];
+                    stats.forEach((s, i) => {
+                        s.dancer.finalPlace = startPlace + i;
+                        s.dancer.calculation.push({
+                            rule: '7b',
+                            column: `1-${col}`,
+                            count: s.count,
+                            sum: s.sum
+                        });
+                        result.push(s);
+                        logRef += `<div>Место ${s.dancer.finalPlace}: ${s.dancer.name} 
+                            (разрешение ничьей в 1-${col}, голосов: ${s.count}, сумма: ${s.sum})</div>`;
+                    });
+                    return result;
+                }
+                
+                col++;
+            }
+
+            // Rule 8: Still tied - average places
+            const avg = startPlace + (group.length - 1) / 2;
+            const result = [];
+            group.forEach((g, i) => {
+                g.dancer.finalPlace = avg;
+                g.dancer.calculation.push({ rule: 8, value: avg });
+                result.push({ dancer: g.dancer });
+                logRef += `<div>Правило 8: ${g.dancer.name} получает среднее место ${avg}</div>`;
+            });
+            return result;
+        }
+
+        function calculateFinalPlacement(danceResults, danceCount, judgeCount, logRef) {
+            if (danceCount === 1) {
+                return danceResults[0].map(r => ({
                     ...r,
                     totalSum: r.place,
-                    finalPlace: r.place
+                    finalPlace: r.place,
+                    rule: '-'
                 }));
             }
 
-            // Rule 9: Sum of places across all rounds
+            // Rule 9: Sum of places
             const participantMap = new Map();
-
-            roundResults.forEach((round, idx) => {
-                round.forEach(p => {
-                    if (!participantMap.has(p.number)) {
-                        participantMap.set(p.number, {
-                            number: p.number,
+            
+            danceResults.forEach((dance, idx) => {
+                dance.forEach(p => {
+                    if (!participantMap.has(p.id)) {
+                        participantMap.set(p.id, {
+                            id: p.id,
                             name: p.name,
                             places: [],
                             totalSum: 0
                         });
                     }
-                    const data = participantMap.get(p.number);
+                    const data = participantMap.get(p.id);
                     data.places.push(p.place);
                     data.totalSum += p.place;
                 });
             });
 
             let results = Array.from(participantMap.values());
-
-            // Sort by total sum (ascending)
+            
+            // Sort by total sum
             results.sort((a, b) => a.totalSum - b.totalSum);
 
-            // Rule 10: Handle ties using "efficiency coefficient"
+            // Apply Rules 10 and 11
             let finalRank = 1;
             let i = 0;
             
@@ -486,7 +513,6 @@
                 const tied = [results[i]];
                 let j = i + 1;
                 
-                // Find all with same sum
                 while (j < results.length && results[j].totalSum === results[i].totalSum) {
                     tied.push(results[j]);
                     j++;
@@ -494,10 +520,14 @@
 
                 if (tied.length === 1) {
                     results[i].finalPlace = finalRank;
+                    results[i].rule = '9';
+                    logRef += `<div>Место ${finalRank}: ${results[i].name} (сумма ${results[i].totalSum})</div>`;
                     finalRank++;
                 } else {
-                    // Rule 10: Calculate efficiency coefficient
-                    const resolved = resolveTiesRule10(tied, finalRank);
+                    logRef += `<div class="my-2 p-2 bg-yellow-900/30 rounded">Ничья за места ${finalRank}-${finalRank + tied.length - 1} 
+                        (сумма ${results[i].totalSum}): ${tied.map(t => t.name).join(', ')}</div>`;
+                    
+                    const resolved = resolveFinalTie(tied, finalRank, danceCount, judgeCount, logRef);
                     for (let k = 0; k < resolved.length; k++) {
                         results[i + k] = resolved[k];
                     }
@@ -510,84 +540,129 @@
             return results;
         }
 
-        function resolveTiesRule10(tiedParticipants, startRank) {
-            // Try to break tie by counting better places
-            const maxPlace = Math.max(...tiedParticipants.map(p => Math.max(...p.places)));
-            
-            for (let placeCheck = 1; placeCheck <= maxPlace; placeCheck++) {
-                const counts = tiedParticipants.map(p => ({
-                    participant: p,
-                    count: p.places.filter(pl => pl <= placeCheck).length,
-                    sum: p.places.filter(pl => pl <= placeCheck).reduce((a, b) => a + b, 0)
-                }));
+        function resolveFinalTie(tied, startRank, danceCount, judgeCount, logRef) {
+            const maxPlace = Math.max(...tied.map(t => Math.ceil(Math.max(...t.places))));
 
-                // Sort by count desc, then sum asc
-                counts.sort((a, b) => {
+            // Rule 10: Efficiency coefficient
+            for (let checkPlace = 1; checkPlace <= maxPlace; checkPlace++) {
+                const stats = tied.map(t => {
+                    // Count places <= checkPlace (rounding up halves)
+                    const count = t.places.filter(p => p <= checkPlace).length;
+                    const sum = t.places.filter(p => p <= checkPlace).reduce((a, b) => a + b, 0);
+                    return { participant: t, count, sum };
+                });
+
+                stats.sort((a, b) => {
                     if (b.count !== a.count) return b.count - a.count;
                     return a.sum - b.sum;
                 });
 
-                // Check if we can differentiate
-                if (counts[0].count > counts[1]?.count || 
-                    (counts[0].count === counts[1]?.count && counts[0].sum < counts[1]?.sum)) {
+                // Check if differentiated
+                const first = stats[0];
+                const second = stats[1];
+                
+                if (!second || first.count > second.count || 
+                    (first.count === second.count && first.sum < second.sum)) {
                     
-                    // Assign places based on this sorting
-                    counts.forEach((c, idx) => {
-                        c.participant.finalPlace = startRank + idx;
-                        c.participant.tieBrokenBy = `Правило 10: ${placeCheck} место (коэф. ${c.count}, сумма ${c.sum})`;
+                    // Can assign places
+                    logRef += `<div>Правило 10 (1-${checkPlace} места):</div>`;
+                    stats.forEach((s, idx) => {
+                        s.participant.finalPlace = startRank + idx;
+                        s.participant.rule = `10 (коэф. ${s.count}, сумма ${s.sum})`;
+                        logRef += `<div class="ml-4">Место ${startRank + idx}: ${s.participant.name} 
+                            (${s.count} раз в 1-${checkPlace}, сумма ${s.sum})</div>`;
                     });
-                    
-                    return counts.map(c => c.participant);
+                    return stats.map(s => s.participant);
                 }
             }
 
-            // Rule 11: If still tied, use skating on all marks
-            // For simplicity, assign average place
-            const avgPlace = startRank + (tiedParticipants.length - 1) / 2;
-            tiedParticipants.forEach((p, idx) => {
-                p.finalPlace = avgPlace;
-                p.tieBrokenBy = 'Правило 11: Среднее арифметическое';
+            // Rule 11: Still tied - use skating on all marks
+            logRef += `<div>Правило 11: Применение скейтинга ко всем оценкам...</div>`;
+            
+            const totalJudges = judgeCount * danceCount;
+            const majority = Math.floor(totalJudges / 2) + 1;
+            
+            // Collect all marks for tied participants
+            const skatingData = tied.map(t => ({
+                ...t,
+                allMarks: t.places.flat().sort((a, b) => a - b)
+            }));
+
+            // Apply skating rules to all marks
+            let currentPlace = startRank;
+            const placed = new Set();
+            
+            for (let col = 1; col <= totalJudges; col++) {
+                const stats = skatingData.filter(s => !placed.has(s.id)).map(s => {
+                    const marks = s.allMarks.filter(m => m <= col);
+                    return {
+                        participant: s,
+                        count: marks.length,
+                        sum: marks.reduce((a, b) => a + b, 0)
+                    };
+                });
+
+                const withMajority = stats.filter(s => s.count >= majority);
+                if (withMajority.length === 0) continue;
+
+                withMajority.sort((a, b) => {
+                    if (b.count !== a.count) return b.count - a.count;
+                    return a.sum - b.sum;
+                });
+
+                // Assign places
+                withMajority.forEach(s => {
+                    s.participant.finalPlace = currentPlace++;
+                    s.participant.rule = `11 (1-${col}, голосов ${s.count})`;
+                    placed.add(s.participant.id);
+                    logRef += `<div class="ml-4">Место ${s.participant.finalPlace}: ${s.participant.name} 
+                        (колонка 1-${col}, голосов ${s.count}, сумма ${s.sum})</div>`;
+                });
+
+                if (placed.size === tied.length) break;
+            }
+
+            // If still not placed (very unlikely), average
+            tied.filter(t => !placed.has(t.id)).forEach(t => {
+                t.finalPlace = startRank + (tied.length - 1) / 2;
+                t.rule = '11 (среднее)';
+                logRef += `<div class="ml-4">Место ${t.finalPlace}: ${t.name} (среднее арифметическое)</div>`;
             });
 
-            return tiedParticipants;
+            return tied.sort((a, b) => a.finalPlace - b.finalPlace);
         }
 
-        function displayFinalResults(results) {
+        function displayResults(results) {
             const container = document.getElementById('finalResults');
-            
             let html = '';
+            
             results.forEach((r, idx) => {
                 let medalClass = '';
                 let medal = '';
                 
-                if (r.finalPlace === 1) {
-                    medalClass = 'winner-gold';
-                    medal = '🥇';
-                } else if (r.finalPlace === 2) {
-                    medalClass = 'winner-silver';
-                    medal = '🥈';
-                } else if (r.finalPlace === 3) {
-                    medalClass = 'winner-bronze';
-                    medal = '🥉';
-                }
+                if (r.finalPlace === 1) { medalClass = 'winner-gold'; medal = '🥇'; }
+                else if (r.finalPlace === 2) { medalClass = 'winner-silver'; medal = '🥈'; }
+                else if (r.finalPlace === 3) { medalClass = 'winner-bronze'; medal = '🥉'; }
 
-                const isTie = !Number.isInteger(r.finalPlace);
+                const isHalf = !Number.isInteger(r.finalPlace);
                 
                 html += `
-                    <div class="result-card ${medalClass} rounded-xl p-4 ${isTie ? 'tie-highlight' : ''} relative overflow-hidden">
+                    <div class="result-card ${medalClass} rounded-xl p-4 relative overflow-hidden">
                         <div class="flex justify-between items-center relative z-10">
                             <div>
-                                <div class="text-3xl font-bold mb-1">${medal} ${r.finalPlace}${isTie ? '' : ''} место</div>
-                                <div class="font-semibold text-lg">№${r.number} ${r.name}</div>
-                                ${r.tieBrokenBy ? `<div class="text-xs mt-1 opacity-80">${r.tieBrokenBy}</div>` : ''}
+                                <div class="text-2xl font-bold mb-1">${medal} ${r.finalPlace} место</div>
+                                <div class="font-semibold">${r.name}</div>
+                                ${r.rule ? `<div class="text-xs mt-1 opacity-80">Правило ${r.rule}</div>` : ''}
                             </div>
                             <div class="text-right">
-                                <div class="text-sm opacity-80">Сумма мест</div>
-                                <div class="text-2xl font-bold">${r.totalSum}</div>
-                                <div class="text-xs opacity-70 mt-1">${r.places.join(' + ')}</div>
+                                <div class="text-sm opacity-80">Сумма</div>
+                                <div class="text-xl font-bold">${r.totalSum}</div>
+                                <div class="text-xs opacity-70">${r.places.map(p => 
+                                    Number.isInteger(p) ? p : p.toFixed(1)
+                                ).join('+')}</div>
                             </div>
                         </div>
-                        ${medalClass ? '<div class="absolute -right-4 -bottom-4 text-8xl opacity-20">' + medal + '</div>' : ''}
+                        ${medal ? `<div class="absolute -right-4 -bottom-4 text-8xl opacity-20">${medal}</div>` : ''}
                     </div>
                 `;
             });
@@ -595,7 +670,7 @@
             container.innerHTML = html;
         }
 
-        // Initialize
+        // Initialize on load
         init();
     </script>
 </body>

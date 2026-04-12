@@ -33,7 +33,7 @@
         .pending { background: rgba(251, 191, 36, 0.2); border-left: 3px solid #f59e0b; }
         .info-badge { background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); }
         .shared-place { background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); }
-        .warning-badge { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); }
+        .error-badge { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -89,6 +89,13 @@
             <div id="qualificationWarning" class="warning-badge rounded-xl p-4 mb-4 hidden">
                 <p class="text-sm text-amber-200">
                     <strong>⚠️ Внимание:</strong> Для определения участников следующего танца необходимо сначала ввести оценки и рассчитать результаты текущего танца.
+                </p>
+            </div>
+            
+            <!-- Error Panel for gaps -->
+            <div id="gapsWarning" class="error-badge rounded-xl p-4 mb-4 hidden">
+                <p class="text-sm text-red-200">
+                    <strong>❌ Ошибка в расчете:</strong> Обнаружены пропуски в местах. Проверьте правильность введенных оценок.
                 </p>
             </div>
             
@@ -160,7 +167,7 @@
         let dancesData = [];
         let participants = [];
         let judges = 5;
-        let hasCalculated = []; // Флаги расчета для каждого танца
+        let hasCalculated = [];
 
         function init() {
             const pCount = Math.max(3, parseInt(document.getElementById('participantCount').value) || 3);
@@ -170,7 +177,6 @@
             document.getElementById('participantCount').value = pCount;
             document.getElementById('maxPlace').textContent = pCount;
             
-            // Инициализируем участников
             participants = Array.from({length: pCount}, (_, i) => ({
                 id: i,
                 name: `Участник ${i + 1}`,
@@ -180,36 +186,33 @@
             dancesData = [];
             hasCalculated = new Array(dCount).fill(false);
             
-            // Первый танец - все участники квалифицированы
             const firstDanceParticipants = participants.map(p => ({
                 id: p.id,
                 globalId: p.globalId,
                 name: p.name,
                 places: new Array(judges).fill(1),
                 qualified: true,
-                status: 'active' // active, pending, eliminated
+                status: 'active'
             }));
             
             dancesData.push({
                 participants: firstDanceParticipants,
                 qualifiedCount: firstDanceParticipants.length,
-                results: null // Результаты расчета
+                results: null
             });
             
-            // Последующие танцы - все участники в статусе "pending" (ожидание отбора)
             for (let d = 1; d < dCount; d++) {
-                // Копируем всех участников из предыдущего танца
                 const prevParticipants = dancesData[d - 1].participants;
                 const pendingParticipants = prevParticipants.map(p => ({
                     ...p,
                     places: new Array(judges).fill(1),
-                    qualified: false, // Пока не квалифицирован
-                    status: 'pending' // Ожидает расчета предыдущего танца
+                    qualified: false,
+                    status: 'pending'
                 }));
                 
                 dancesData.push({
                     participants: pendingParticipants,
-                    qualifiedCount: 0, // Пока 0, определится после расчета
+                    qualifiedCount: 0,
                     results: null
                 });
             }
@@ -254,7 +257,6 @@
             container.innerHTML = html;
             document.getElementById('currentDanceTitle').textContent = `Танец ${currentDance + 1}`;
             
-            // Обновляем информацию о квалификации
             updateQualificationInfo();
         }
 
@@ -450,7 +452,6 @@
         function calculateAll() {
             saveCurrentData();
             
-            // Проверяем на дубликаты
             let hasErrors = false;
             const activeParticipants = dancesData[currentDance].participants.filter(p => p.status === 'active');
             
@@ -469,7 +470,7 @@
                 return;
             }
             
-            // Рассчитываем текущий танец и все предыдущие (если не рассчитаны)
+            // Рассчитываем текущий и предыдущие танцы
             for (let d = 0; d <= currentDance; d++) {
                 if (!hasCalculated[d]) {
                     calculateDance(d);
@@ -489,12 +490,27 @@
                 <strong>Необходимое большинство:</strong> ${majority} из ${judgeCount}
             </div>`;
 
+            // Проверяем на пропуски в местах
+            let hasGaps = false;
+
             // Выводим результаты всех рассчитанных танцев
             for (let d = 0; d < danceCount; d++) {
                 if (!hasCalculated[d]) continue;
                 
                 const results = dancesData[d].results;
                 const activeDancers = dancesData[d].participants.filter(p => p.status === 'active' || (d > 0 && p.status !== 'pending'));
+                
+                // Проверяем на пропуски
+                const sortedPlaces = results.map(r => r.finalPlace).sort((a, b) => a - b);
+                let expectedPlace = 1;
+                for (const place of sortedPlaces) {
+                    const placeInt = Math.floor(place);
+                    if (placeInt > expectedPlace) {
+                        hasGaps = true;
+                        break;
+                    }
+                    expectedPlace = placeInt + 1;
+                }
                 
                 logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg">`;
                 logHtml += `<h4 class="font-bold text-indigo-300 mb-3 text-lg">Танец ${d + 1} (Правила 5-8)</h4>`;
@@ -514,7 +530,7 @@
                         } else if (c.rule === '7b') {
                             logHtml += `<span class="text-orange-400">Правило 7b: Следующая колонка 1-${c.column}, голосов ${c.count}, сумма ${c.sum}</span>`;
                         } else if (c.rule === '8') {
-                            logHtml += `<span class="text-red-400">Правило 8: Среднее арифметическое ${c.value}</span>`;
+                            logHtml += `<span class="text-red-400">Правило 8: Среднее арифметическое ${c.value} (места ${c.start}-${c.end})</span>`;
                         }
                         logHtml += `<br>`;
                     });
@@ -531,7 +547,15 @@
                 logHtml += `</div>`;
             }
 
-            // Итоговое распределение (если несколько танцев)
+            // Показываем предупреждение о пропусках
+            const gapsWarning = document.getElementById('gapsWarning');
+            if (hasGaps) {
+                gapsWarning.classList.remove('hidden');
+            } else {
+                gapsWarning.classList.add('hidden');
+            }
+
+            // Итоговое распределение
             if (danceCount > 1 && hasCalculated.every(x => x)) {
                 logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg border-t-2 border-purple-500">`;
                 logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">Итоговое место (Правила 9-11)</h4>`;
@@ -587,7 +611,6 @@
         }
 
         function updateSubsequentDances() {
-            // Для каждого рассчитанного танца обновляем отбор в следующий
             for (let d = 0; d < dancesData.length - 1; d++) {
                 if (!hasCalculated[d]) continue;
                 
@@ -622,7 +645,7 @@
             return place.toFixed(1);
         }
 
-        // ПРАВИЛА 5-8: Расчет для одного танца
+        // ПРАВИЛА 5-8: Расчет для одного танца с ПОСЛЕДОВАТЕЛЬНЫМИ местами
         function calculateSingleDanceInternal(participants, judgeCount) {
             const majority = Math.floor(judgeCount / 2) + 1;
             
@@ -674,6 +697,7 @@
 
                     for (const group of groups) {
                         if (group.length === 1) {
+                            // Однозначный победитель
                             const winner = group[0];
                             winner.dancer.finalPlace = currentPlace;
                             
@@ -691,11 +715,12 @@
                             currentPlace++;
                             placedThisRound = true;
                         } else {
+                            // Ничья - правило 7
                             const resolved = resolveTieRule7(group, col, judgeCount, majority, currentPlace);
-                            resolved.forEach(r => {
-                                r.dancer.placed = true;
-                            });
-                            currentPlace += group.length;
+                            const groupSize = group.length;
+                            
+                            // ВАЖНО: currentPlace должен продолжаться ПОСЛЕ всех разрешенных мест
+                            currentPlace += groupSize;
                             placedThisRound = true;
                         }
                     }
@@ -704,17 +729,19 @@
                 }
 
                 if (!placedThisRound && remaining.length > 0) {
-                    const placesToShare = [];
-                    for (let i = 0; i < remaining.length; i++) {
-                        placesToShare.push(currentPlace + i);
-                    }
-                    const average = placesToShare.reduce((a, b) => a + b, 0) / placesToShare.length;
+                    // Правило 8: все оставшиеся делят места ПОСЛЕДОВАТЕЛЬНО
+                    const groupSize = remaining.length;
+                    const startPlace = currentPlace;
+                    const endPlace = currentPlace + groupSize - 1;
+                    const average = (startPlace + endPlace) / 2;
                     
                     remaining.forEach(d => {
                         d.finalPlace = average;
-                        d.calculation.push({ rule: '8', value: average });
+                        d.calculation.push({ rule: '8', value: average, start: startPlace, end: endPlace });
                         d.placed = true;
                     });
+                    
+                    currentPlace += groupSize;
                     break;
                 }
             }
@@ -729,9 +756,11 @@
             }));
         }
 
+        // Правило 7: разрешение ничьих с ПОСЛЕДОВАТЕЛЬНЫМИ местами
         function resolveTieRule7(group, currentCol, judgeCount, majority, startPlace) {
             let col = currentCol + 1;
             const tiedDancers = group.map(g => g.dancer);
+            const groupSize = group.length;
             
             while (col <= judgeCount) {
                 const stats = tiedDancers.map(d => {
@@ -748,6 +777,7 @@
                     return a.sum - b.sum;
                 });
 
+                // Проверяем, все ли различились
                 let allDifferent = true;
                 for (let i = 0; i < stats.length - 1; i++) {
                     if (stats[i].count === stats[i + 1].count && stats[i].sum === stats[i + 1].sum) {
@@ -757,6 +787,7 @@
                 }
 
                 if (allDifferent) {
+                    // Различились - присваиваем ПОСЛЕДОВАТЕЛЬНЫЕ места
                     stats.forEach((s, i) => {
                         s.dancer.finalPlace = startPlace + i;
                         s.dancer.calculation.push({
@@ -772,15 +803,19 @@
                 col++;
             }
 
-            const placesToShare = [];
-            for (let i = 0; i < group.length; i++) {
-                placesToShare.push(startPlace + i);
-            }
-            const average = placesToShare.reduce((a, b) => a + b, 0) / placesToShare.length;
+            // Если дошли до конца и не различились - правило 8
+            // Все участники группы делят места от startPlace до startPlace + groupSize - 1
+            const endPlace = startPlace + groupSize - 1;
+            const average = (startPlace + endPlace) / 2;
             
             return group.map((g, i) => {
                 g.dancer.finalPlace = average;
-                g.dancer.calculation.push({ rule: '8', value: average });
+                g.dancer.calculation.push({ 
+                    rule: '8', 
+                    value: average,
+                    start: startPlace,
+                    end: endPlace
+                });
                 return { dancer: g.dancer };
             });
         }
@@ -951,15 +986,10 @@
 
             const remaining = tied.filter(t => !placed.has(t.globalId));
             if (remaining.length > 0) {
-                const placesToShare = [];
-                let idx = 0;
-                while (placesToShare.length < remaining.length) {
-                    if (!placed.has(tied[idx]?.globalId)) {
-                        placesToShare.push(startRank + idx);
-                    }
-                    idx++;
-                }
-                const average = placesToShare.reduce((a, b) => a + b, 0) / remaining.length;
+                const groupSize = remaining.length;
+                const start = startRank + (tied.length - groupSize);
+                const end = start + groupSize - 1;
+                const average = (start + end) / 2;
                 
                 remaining.forEach(t => {
                     t.finalPlace = average;

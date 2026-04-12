@@ -30,8 +30,10 @@
         .duplicate-error { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; }
         .eliminated { opacity: 0.5; background: rgba(100, 100, 100, 0.2); }
         .qualified { background: rgba(34, 197, 94, 0.2); border-left: 3px solid #22c55e; }
+        .pending { background: rgba(251, 191, 36, 0.2); border-left: 3px solid #f59e0b; }
         .info-badge { background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); }
         .shared-place { background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); }
+        .warning-badge { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -63,7 +65,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Количество танцев</label>
-                    <input type="number" id="danceCount" min="1" max="5" value="1" 
+                    <input type="number" id="danceCount" min="1" max="5" value="2" 
                            class="input-field w-full px-4 py-3 rounded-xl text-white"
                            onchange="init()">
                 </div>
@@ -80,6 +82,13 @@
                 <p class="text-sm text-indigo-200">
                     <strong>📋 Правила отбора:</strong> В каждый следующий танец проходят только 60% лучших участников по рейтингу предыдущего танца (округление вверх). 
                     Например: из 10 участников → 6 в следующий танец, из 5 участников → 3 в следующий танец.
+                </p>
+            </div>
+            
+            <!-- Warning Panel for pending qualification -->
+            <div id="qualificationWarning" class="warning-badge rounded-xl p-4 mb-4 hidden">
+                <p class="text-sm text-amber-200">
+                    <strong>⚠️ Внимание:</strong> Для определения участников следующего танца необходимо сначала ввести оценки и рассчитать результаты текущего танца.
                 </p>
             </div>
             
@@ -151,7 +160,7 @@
         let dancesData = [];
         let participants = [];
         let judges = 5;
-        let qualifiedParticipants = [];
+        let hasCalculated = []; // Флаги расчета для каждого танца
 
         function init() {
             const pCount = Math.max(3, parseInt(document.getElementById('participantCount').value) || 3);
@@ -161,6 +170,7 @@
             document.getElementById('participantCount').value = pCount;
             document.getElementById('maxPlace').textContent = pCount;
             
+            // Инициализируем участников
             participants = Array.from({length: pCount}, (_, i) => ({
                 id: i,
                 name: `Участник ${i + 1}`,
@@ -168,55 +178,39 @@
             }));
 
             dancesData = [];
-            qualifiedParticipants = [];
+            hasCalculated = new Array(dCount).fill(false);
             
-            for (let d = 0; d < dCount; d++) {
-                let danceParticipants;
-                
-                if (d === 0) {
-                    danceParticipants = participants.map(p => ({
-                        id: p.id,
-                        globalId: p.globalId,
-                        name: p.name,
-                        places: new Array(judges).fill(1),
-                        qualified: true
-                    }));
-                    qualifiedParticipants = participants.map(p => p.id);
-                } else {
-                    const prevDance = dancesData[d - 1];
-                    const prevResults = calculateSingleDanceInternal(prevDance.participants, judges);
-                    
-                    const sortedByPlace = [...prevResults].sort((a, b) => a.finalPlace - b.finalPlace);
-                    const countToQualify = Math.ceil(sortedByPlace.length * 0.6);
-                    const minParticipants = 3;
-                    const actualCount = Math.max(minParticipants, countToQualify);
-                    const qualifiedIds = sortedByPlace.slice(0, actualCount).map(p => p.id);
-                    
-                    qualifiedParticipants = qualifiedIds;
-                    
-                    danceParticipants = prevDance.participants
-                        .filter(p => qualifiedIds.includes(p.id))
-                        .map(p => ({
-                            ...p,
-                            places: new Array(judges).fill(1),
-                            qualified: true
-                        }));
-                    
-                    const eliminatedParticipants = prevDance.participants
-                        .filter(p => !qualifiedIds.includes(p.id))
-                        .map(p => ({
-                            ...p,
-                            places: new Array(judges).fill('-'),
-                            qualified: false,
-                            eliminated: true
-                        }));
-                    
-                    danceParticipants = [...danceParticipants, ...eliminatedParticipants];
-                }
+            // Первый танец - все участники квалифицированы
+            const firstDanceParticipants = participants.map(p => ({
+                id: p.id,
+                globalId: p.globalId,
+                name: p.name,
+                places: new Array(judges).fill(1),
+                qualified: true,
+                status: 'active' // active, pending, eliminated
+            }));
+            
+            dancesData.push({
+                participants: firstDanceParticipants,
+                qualifiedCount: firstDanceParticipants.length,
+                results: null // Результаты расчета
+            });
+            
+            // Последующие танцы - все участники в статусе "pending" (ожидание отбора)
+            for (let d = 1; d < dCount; d++) {
+                // Копируем всех участников из предыдущего танца
+                const prevParticipants = dancesData[d - 1].participants;
+                const pendingParticipants = prevParticipants.map(p => ({
+                    ...p,
+                    places: new Array(judges).fill(1),
+                    qualified: false, // Пока не квалифицирован
+                    status: 'pending' // Ожидает расчета предыдущего танца
+                }));
                 
                 dancesData.push({
-                    participants: danceParticipants,
-                    qualifiedCount: danceParticipants.filter(p => p.qualified).length
+                    participants: pendingParticipants,
+                    qualifiedCount: 0, // Пока 0, определится после расчета
+                    results: null
                 });
             }
 
@@ -234,28 +228,57 @@
                 const isActive = i === currentDance;
                 const qualified = dancesData[i]?.qualifiedCount || 0;
                 const total = dancesData[i]?.participants?.length || 0;
+                const calculated = hasCalculated[i];
+                const pending = i > 0 && !calculated;
+                
+                let statusBadge = '';
+                if (i === 0) {
+                    statusBadge = `<span class="text-xs ${isActive ? 'text-indigo-200' : 'text-slate-500'}">(${qualified}/${total})</span>`;
+                } else if (pending) {
+                    statusBadge = `<span class="text-xs ${isActive ? 'text-amber-200' : 'text-amber-500'}">(ожидание)</span>`;
+                } else {
+                    statusBadge = `<span class="text-xs ${isActive ? 'text-indigo-200' : 'text-slate-500'}">(${qualified}/${total})</span>`;
+                }
                 
                 html += `
                     <button onclick="switchDance(${i})" 
                             class="px-6 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${isActive ? 
                                 'bg-indigo-600 text-white shadow-lg' : 
+                                pending ? 'bg-amber-900/50 text-amber-400 hover:bg-amber-900/70' :
                                 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
                         Танец ${i + 1} 
-                        <span class="text-xs ${isActive ? 'text-indigo-200' : 'text-slate-500'}">
-                            (${qualified}/${total})
-                        </span>
+                        ${statusBadge}
                     </button>
                 `;
             }
             container.innerHTML = html;
             document.getElementById('currentDanceTitle').textContent = `Танец ${currentDance + 1}`;
             
-            const currentQualified = dancesData[currentDance]?.qualifiedCount || 0;
-            const currentTotal = dancesData[currentDance]?.participants?.length || 0;
-            document.getElementById('qualificationInfo').textContent = 
-                currentDance === 0 
-                    ? `Все ${currentTotal} участников` 
-                    : `Прошли ${currentQualified} из ${currentTotal} (60%)`;
+            // Обновляем информацию о квалификации
+            updateQualificationInfo();
+        }
+
+        function updateQualificationInfo() {
+            const infoEl = document.getElementById('qualificationInfo');
+            const warningEl = document.getElementById('qualificationWarning');
+            
+            if (currentDance === 0) {
+                const total = dancesData[0]?.participants?.length || 0;
+                infoEl.textContent = `Все ${total} участников`;
+                warningEl.classList.add('hidden');
+            } else {
+                const prevCalculated = hasCalculated[currentDance - 1];
+                const qualified = dancesData[currentDance]?.qualifiedCount || 0;
+                const total = dancesData[currentDance]?.participants?.length || 0;
+                
+                if (!prevCalculated) {
+                    infoEl.textContent = `Ожидание расчета танца ${currentDance}`;
+                    warningEl.classList.remove('hidden');
+                } else {
+                    infoEl.textContent = `Прошли ${qualified} из ${total} (60%)`;
+                    warningEl.classList.add('hidden');
+                }
+            }
         }
 
         function switchDance(index) {
@@ -271,15 +294,19 @@
             
             rows.forEach((row, idx) => {
                 const inputs = row.querySelectorAll('.judge-input');
-                if (inputs.length > 0 && !dancesData[currentDance].participants[idx].eliminated) {
-                    dancesData[currentDance].participants[idx].places = 
-                        Array.from(inputs).map(input => {
-                            const val = parseInt(input.value);
-                            return isNaN(val) ? 1 : val;
-                        });
+                const participant = dancesData[currentDance].participants[idx];
+                
+                if (inputs.length > 0 && participant.status === 'active') {
+                    participant.places = Array.from(inputs).map(input => {
+                        const val = parseInt(input.value);
+                        return isNaN(val) ? 1 : val;
+                    });
                 }
-                dancesData[currentDance].participants[idx].name = 
-                    row.querySelector('.name-input')?.value || dancesData[currentDance].participants[idx].name;
+                
+                const nameInput = row.querySelector('.name-input');
+                if (nameInput && !nameInput.disabled) {
+                    participant.name = nameInput.value;
+                }
             });
         }
 
@@ -299,24 +326,38 @@
             }
 
             const data = dancesData[currentDance]?.participants || [];
-            const activeParticipants = data.filter(p => p.qualified && !p.eliminated);
+            const activeParticipants = data.filter(p => p.status === 'active');
             const maxPlace = activeParticipants.length;
             
             let html = '';
 
             data.forEach((p, idx) => {
-                const isEliminated = p.eliminated;
-                const rowClass = isEliminated ? 'eliminated' : (p.qualified ? 'qualified' : '');
+                const isPending = p.status === 'pending';
+                const isEliminated = p.status === 'eliminated';
+                const isActive = p.status === 'active';
+                
+                let rowClass = '';
+                let statusLabel = '';
+                
+                if (isPending) {
+                    rowClass = 'pending';
+                    statusLabel = '<span class="text-xs text-amber-400">Ожидание отбора</span>';
+                } else if (isEliminated) {
+                    rowClass = 'eliminated';
+                    statusLabel = '<span class="text-xs text-red-400">Не прошел</span>';
+                } else if (isActive) {
+                    rowClass = 'qualified';
+                }
                 
                 html += `<tr class="border-b border-slate-800 ${rowClass} transition">`;
                 html += `<td class="name-col p-3">
                     <input type="text" value="${p.name}" 
-                           class="name-input input-field w-full px-3 py-2 rounded-lg text-white ${isEliminated ? 'bg-slate-800' : ''}"
-                           placeholder="ФИО участника" ${isEliminated ? 'disabled' : ''}>
-                    ${isEliminated ? '<span class="text-xs text-red-400">Не прошел</span>' : ''}
+                           class="name-input input-field w-full px-3 py-2 rounded-lg text-white ${isPending || isEliminated ? 'bg-slate-800' : ''}"
+                           placeholder="ФИО участника" ${isPending || isEliminated ? 'disabled' : ''}>
+                    ${statusLabel}
                 </td>`;
                 
-                if (isEliminated) {
+                if (isPending || isEliminated) {
                     for (let j = 0; j < judges; j++) {
                         html += `<td class="judge-cell p-2 text-center text-slate-600">-</td>`;
                     }
@@ -336,7 +377,7 @@
             });
             
             tbody.innerHTML = html;
-            document.getElementById('maxPlace').textContent = maxPlace;
+            document.getElementById('maxPlace').textContent = maxPlace > 0 ? maxPlace : '-';
         }
 
         function validateUnique(input) {
@@ -371,7 +412,6 @@
         }
 
         function fillRandom() {
-            const rows = document.querySelectorAll('#participantsBody tr');
             const activeInputs = document.querySelectorAll('.judge-input:not([disabled])');
             const pCount = activeInputs.length / judges;
             
@@ -397,7 +437,7 @@
 
         function clearCurrentDance() {
             if (confirm('Очистить данные текущего танца?')) {
-                const activeParticipants = dancesData[currentDance].participants.filter(p => p.qualified && !p.eliminated);
+                const activeParticipants = dancesData[currentDance].participants.filter(p => p.status === 'active');
                 activeParticipants.forEach(p => {
                     p.places = new Array(judges).fill(1);
                 });
@@ -410,8 +450,9 @@
         function calculateAll() {
             saveCurrentData();
             
+            // Проверяем на дубликаты
             let hasErrors = false;
-            const activeParticipants = dancesData[currentDance].participants.filter(p => p.qualified && !p.eliminated);
+            const activeParticipants = dancesData[currentDance].participants.filter(p => p.status === 'active');
             
             for (let j = 0; j < judges; j++) {
                 const inputs = document.querySelectorAll(`.judge-input[data-judge="${j}"]:not([disabled])`);
@@ -428,7 +469,15 @@
                 return;
             }
             
-            recalculateAllDances();
+            // Рассчитываем текущий танец и все предыдущие (если не рассчитаны)
+            for (let d = 0; d <= currentDance; d++) {
+                if (!hasCalculated[d]) {
+                    calculateDance(d);
+                }
+            }
+            
+            // Обновляем отбор для следующих танцев
+            updateSubsequentDances();
             
             const danceCount = dancesData.length;
             const judgeCount = judges;
@@ -440,17 +489,16 @@
                 <strong>Необходимое большинство:</strong> ${majority} из ${judgeCount}
             </div>`;
 
-            const danceResults = [];
-            
+            // Выводим результаты всех рассчитанных танцев
             for (let d = 0; d < danceCount; d++) {
-                const activeDancers = dancesData[d].participants.filter(p => p.qualified && !p.eliminated);
+                if (!hasCalculated[d]) continue;
+                
+                const results = dancesData[d].results;
+                const activeDancers = dancesData[d].participants.filter(p => p.status === 'active' || (d > 0 && p.status !== 'pending'));
                 
                 logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg">`;
                 logHtml += `<h4 class="font-bold text-indigo-300 mb-3 text-lg">Танец ${d + 1} (Правила 5-8)</h4>`;
                 logHtml += `<p class="text-sm text-slate-400 mb-3">Участников: ${activeDancers.length}</p>`;
-                
-                const results = calculateSingleDanceInternal(activeDancers, judgeCount);
-                danceResults.push(results);
                 
                 results.forEach(r => {
                     logHtml += `<div class="calculation-step">`;
@@ -473,62 +521,105 @@
                     logHtml += `</div>`;
                 });
                 
+                // Информация об отборе в следующий танец
+                if (d < danceCount - 1) {
+                    const qualified = dancesData[d + 1].participants.filter(p => p.status === 'active' || p.status === 'eliminated');
+                    const qualifiedCount = qualified.filter(p => p.status === 'active').length;
+                    logHtml += `<p class="text-sm text-emerald-400 mt-3">В танец ${d + 2} прошли ${qualifiedCount} участников</p>`;
+                }
+                
                 logHtml += `</div>`;
             }
 
-            logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg border-t-2 border-purple-500">`;
-            logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">Итоговое место (Правила 9-11)</h4>`;
-            
-            const finalResults = calculateFinalPlacement(danceResults, danceCount, judgeCount);
-            
-            finalResults.forEach(r => {
-                logHtml += `<div class="calculation-step">`;
-                logHtml += `<strong>${r.name}</strong>: итоговое место ${formatPlace(r.finalPlace)}, сумма ${r.totalSum}<br>`;
-                logHtml += `Места по танцам: ${r.places.map(p => formatPlace(p)).join(' + ')} = ${r.totalSum}<br>`;
-                if (r.rule && r.rule !== '9') {
-                    logHtml += `<span class="text-pink-400">Применено: ${r.rule}</span>`;
-                }
+            // Итоговое распределение (если несколько танцев)
+            if (danceCount > 1 && hasCalculated.every(x => x)) {
+                logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg border-t-2 border-purple-500">`;
+                logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">Итоговое место (Правила 9-11)</h4>`;
+                
+                const danceResults = dancesData.map(d => d.results);
+                const finalResults = calculateFinalPlacement(danceResults, danceCount, judgeCount);
+                
+                finalResults.forEach(r => {
+                    logHtml += `<div class="calculation-step">`;
+                    logHtml += `<strong>${r.name}</strong>: итоговое место ${formatPlace(r.finalPlace)}, сумма ${r.totalSum}<br>`;
+                    logHtml += `Места по танцам: ${r.places.map(p => formatPlace(p)).join(' + ')} = ${r.totalSum}<br>`;
+                    if (r.rule && r.rule !== '9') {
+                        logHtml += `<span class="text-pink-400">Применено: ${r.rule}</span>`;
+                    }
+                    logHtml += `</div>`;
+                });
+                
                 logHtml += `</div>`;
-            });
-            
-            logHtml += `</div>`;
+                
+                displayResults(finalResults);
+            } else if (danceCount === 1) {
+                displayResults(dancesData[0].results.map(r => ({
+                    ...r,
+                    totalSum: r.finalPlace,
+                    finalPlace: r.finalPlace,
+                    rule: '-'
+                })));
+            }
 
-            displayResults(finalResults);
             document.getElementById('calculationLog').classList.remove('hidden');
             document.getElementById('logContent').innerHTML = logHtml;
+            
+            renderDanceTabs();
+            renderTable();
         }
 
-        function formatPlace(place) {
-            if (place === Math.floor(place)) return place.toString();
-            return place.toFixed(1);
+        function calculateDance(danceIndex) {
+            const activeParticipants = dancesData[danceIndex].participants.filter(p => p.status === 'active');
+            
+            if (activeParticipants.length === 0) return;
+            
+            const results = calculateSingleDanceInternal(activeParticipants, judges);
+            dancesData[danceIndex].results = results;
+            hasCalculated[danceIndex] = true;
+            
+            // Обновляем finalPlace у участников
+            results.forEach(r => {
+                const participant = dancesData[danceIndex].participants.find(p => p.id === r.id);
+                if (participant) {
+                    participant.finalPlace = r.finalPlace;
+                }
+            });
         }
 
-        function recalculateAllDances() {
-            for (let d = 1; d < dancesData.length; d++) {
-                const prevDance = dancesData[d - 1];
-                const prevActive = prevDance.participants.filter(p => p.qualified && !p.eliminated);
-                const prevResults = calculateSingleDanceInternal(prevActive, judges);
+        function updateSubsequentDances() {
+            // Для каждого рассчитанного танца обновляем отбор в следующий
+            for (let d = 0; d < dancesData.length - 1; d++) {
+                if (!hasCalculated[d]) continue;
                 
-                const sortedByPlace = [...prevResults].sort((a, b) => a.finalPlace - b.finalPlace);
+                const results = dancesData[d].results;
+                const sortedByPlace = [...results].sort((a, b) => a.finalPlace - b.finalPlace);
+                
+                // 60% с округлением вверх, минимум 3
                 const countToQualify = Math.ceil(sortedByPlace.length * 0.6);
                 const minParticipants = 3;
                 const actualCount = Math.max(minParticipants, countToQualify);
                 
                 const qualifiedIds = sortedByPlace.slice(0, actualCount).map(p => p.id);
                 
-                dancesData[d].participants.forEach(p => {
+                // Обновляем статус участников в следующем танце
+                const nextDance = dancesData[d + 1];
+                nextDance.participants.forEach(p => {
                     if (qualifiedIds.includes(p.id)) {
+                        p.status = 'active';
                         p.qualified = true;
-                        p.eliminated = false;
                     } else {
+                        p.status = 'eliminated';
                         p.qualified = false;
-                        p.eliminated = true;
                     }
                 });
                 
-                dancesData[d].qualifiedCount = qualifiedIds.length;
+                nextDance.qualifiedCount = qualifiedIds.length;
             }
-            renderDanceTabs();
+        }
+
+        function formatPlace(place) {
+            if (place === Math.floor(place)) return place.toString();
+            return place.toFixed(1);
         }
 
         // ПРАВИЛА 5-8: Расчет для одного танца
@@ -544,12 +635,11 @@
             }));
 
             let currentPlace = 1;
-            const totalParticipants = dancers.length;
 
             while (dancers.some(d => !d.placed)) {
                 const remaining = dancers.filter(d => !d.placed);
+                let placedThisRound = false;
                 
-                // Ищем в каждой колонке
                 for (let col = 1; col <= judgeCount; col++) {
                     const stats = remaining.map(d => {
                         const places = d.sortedPlaces.filter(p => p <= col);
@@ -563,13 +653,11 @@
                     const withMajority = stats.filter(s => s.count >= majority);
                     if (withMajority.length === 0) continue;
 
-                    // Сортируем: больше голосов, затем меньше сумма
                     withMajority.sort((a, b) => {
                         if (b.count !== a.count) return b.count - a.count;
                         return a.sum - b.sum;
                     });
 
-                    // Группируем по одинаковым (count, sum)
                     const groups = [];
                     let currentGroup = [withMajority[0]];
                     
@@ -584,10 +672,8 @@
                     }
                     groups.push(currentGroup);
 
-                    // Обрабатываем группы
                     for (const group of groups) {
                         if (group.length === 1) {
-                            // Однозначный победитель
                             const winner = group[0];
                             winner.dancer.finalPlace = currentPlace;
                             
@@ -603,38 +689,33 @@
                             
                             winner.dancer.placed = true;
                             currentPlace++;
+                            placedThisRound = true;
                         } else {
-                            // Ничья - правило 7
                             const resolved = resolveTieRule7(group, col, judgeCount, majority, currentPlace);
                             resolved.forEach(r => {
                                 r.dancer.placed = true;
                             });
                             currentPlace += group.length;
+                            placedThisRound = true;
                         }
                     }
                     
-                    // Если разместили всех с большинством в этой колонке, переходим к следующей итерации
-                    if (withMajority.length > 0) break;
+                    if (placedThisRound) break;
                 }
 
-                // Если никто не получил большинство - правило 8
-                if (!dancers.some(d => d.placed && d.finalPlace >= currentPlace)) {
-                    const stillRemaining = dancers.filter(d => !d.placed);
-                    if (stillRemaining.length > 0) {
-                        // Правило 8: среднее арифметическое
-                        const placesToShare = [];
-                        for (let i = 0; i < stillRemaining.length; i++) {
-                            placesToShare.push(currentPlace + i);
-                        }
-                        const average = placesToShare.reduce((a, b) => a + b, 0) / placesToShare.length;
-                        
-                        stillRemaining.forEach(d => {
-                            d.finalPlace = average;
-                            d.calculation.push({ rule: '8', value: average });
-                            d.placed = true;
-                        });
-                        break;
+                if (!placedThisRound && remaining.length > 0) {
+                    const placesToShare = [];
+                    for (let i = 0; i < remaining.length; i++) {
+                        placesToShare.push(currentPlace + i);
                     }
+                    const average = placesToShare.reduce((a, b) => a + b, 0) / placesToShare.length;
+                    
+                    remaining.forEach(d => {
+                        d.finalPlace = average;
+                        d.calculation.push({ rule: '8', value: average });
+                        d.placed = true;
+                    });
+                    break;
                 }
             }
 
@@ -648,11 +729,7 @@
             }));
         }
 
-        // Правило 7: разрешение ничьих
         function resolveTieRule7(group, currentCol, judgeCount, majority, startPlace) {
-            // Правило 7a: проверяем суммы (уже проверено, они равны)
-            // Переходим к правилу 7b
-            
             let col = currentCol + 1;
             const tiedDancers = group.map(g => g.dancer);
             
@@ -666,13 +743,11 @@
                     };
                 });
 
-                // Сортируем
                 stats.sort((a, b) => {
                     if (b.count !== a.count) return b.count - a.count;
                     return a.sum - b.sum;
                 });
 
-                // Проверяем, все ли различились
                 let allDifferent = true;
                 for (let i = 0; i < stats.length - 1; i++) {
                     if (stats[i].count === stats[i + 1].count && stats[i].sum === stats[i + 1].sum) {
@@ -682,7 +757,6 @@
                 }
 
                 if (allDifferent) {
-                    // Различились - присваиваем места
                     stats.forEach((s, i) => {
                         s.dancer.finalPlace = startPlace + i;
                         s.dancer.calculation.push({
@@ -698,7 +772,6 @@
                 col++;
             }
 
-            // Если дошли до конца и не различились - правило 8
             const placesToShare = [];
             for (let i = 0; i < group.length; i++) {
                 placesToShare.push(startPlace + i);
@@ -714,16 +787,6 @@
 
         // ПРАВИЛА 9-11: Итоговое распределение мест
         function calculateFinalPlacement(danceResults, danceCount, judgeCount) {
-            if (danceCount === 1) {
-                return danceResults[0].map(r => ({
-                    ...r,
-                    totalSum: r.finalPlace,
-                    finalPlace: r.finalPlace,
-                    rule: '-'
-                }));
-            }
-
-            // Собираем данные по всем танцам
             const participantMap = new Map();
             
             danceResults.forEach((dance, idx) => {
@@ -744,18 +807,14 @@
             });
 
             let results = Array.from(participantMap.values());
-            
-            // Сортируем по сумме мест
             results.sort((a, b) => a.totalSum - b.totalSum);
 
-            // Присваиваем места
             let finalRank = 1;
             let i = 0;
             
             while (i < results.length) {
                 const current = results[i];
                 
-                // Ищем всех с такой же суммой
                 const tied = [current];
                 let j = i + 1;
                 
@@ -765,12 +824,10 @@
                 }
 
                 if (tied.length === 1) {
-                    // Нет ничьей - правило 9
                     current.finalPlace = finalRank;
                     current.rule = '9';
                     finalRank++;
                 } else {
-                    // Ничья - применяем правило 10
                     const resolved = resolveFinalTieRule10(tied, finalRank, danceCount, judgeCount);
                     
                     for (let k = 0; k < resolved.length; k++) {
@@ -786,36 +843,29 @@
             return results;
         }
 
-        // Правило 10: разрешение ничьих по сумме мест
         function resolveFinalTieRule10(tied, startRank, danceCount, judgeCount) {
             const maxPlace = Math.max(...tied.map(t => Math.ceil(Math.max(...t.places))));
 
-            // Проверяем коэффициент эффективности для мест 1-N
             for (let checkPlace = 1; checkPlace <= maxPlace; checkPlace++) {
                 const stats = tied.map(t => {
-                    // Округляем места с половинками вверх для подсчета коэффициента
                     const roundedPlaces = t.places.map(p => Math.ceil(p));
                     const count = roundedPlaces.filter(p => p <= checkPlace).length;
-                    // Сумма составляющих (без округления)
                     const actualPlaces = t.places.filter((p, idx) => roundedPlaces[idx] <= checkPlace);
                     const sum = actualPlaces.reduce((a, b) => a + b, 0);
                     return { participant: t, count, sum, checkPlace };
                 });
 
-                // Сортируем: больше count, затем меньше sum
                 stats.sort((a, b) => {
                     if (b.count !== a.count) return b.count - a.count;
                     return a.sum - b.sum;
                 });
 
-                // Проверяем, есть ли различия
                 const first = stats[0];
                 const second = stats[1];
                 
                 if (!second || first.count > second.count || 
                     (first.count === second.count && first.sum < second.sum)) {
                     
-                    // Есть различие - присваиваем места
                     stats.forEach((s, idx) => {
                         s.participant.finalPlace = startRank + idx;
                         s.participant.rule = `10 (1-${checkPlace}: ${s.count} раз, сумма ${s.sum})`;
@@ -823,9 +873,7 @@
                     return stats.map(s => s.participant);
                 }
                 
-                // Если коэффициенты равны, проверяем суммы составляющих
                 if (first.count === second.count && first.sum === second.sum) {
-                    // Проверяем, все ли коэффициенты и суммы равны
                     let allEqual = true;
                     for (let i = 0; i < stats.length - 1; i++) {
                         if (stats[i].count !== stats[i + 1].count || stats[i].sum !== stats[i + 1].sum) {
@@ -835,7 +883,6 @@
                     }
                     
                     if (!allEqual) {
-                        // Есть различия в суммах - сортируем и присваиваем
                         stats.forEach((s, idx) => {
                             s.participant.finalPlace = startRank + idx;
                             s.participant.rule = `10 (1-${checkPlace}: ${s.count} раз, сумма ${s.sum})`;
@@ -843,46 +890,28 @@
                         return stats.map(s => s.participant);
                     }
                     
-                    // Все равны - переходим к правилу 11
                     break;
                 }
             }
 
-            // Правило 11: "большой скейтинг"
             return resolveFinalTieRule11(tied, startRank, danceCount, judgeCount);
         }
 
-        // Правило 11: большой скейтинг
         function resolveFinalTieRule11(tied, startRank, danceCount, judgeCount) {
             const totalJudges = judgeCount * danceCount;
             const majority = Math.floor(totalJudges / 2) + 1;
             
-            // Создаем "все оценки" для каждого участника
-            // Для этого нам нужно получить исходные оценки судей из danceResults
-            // Но у нас есть только finalPlace для каждого танца
-            // Поэтому используем places из исходных данных
-            
             const skatingData = tied.map(t => {
-                // Собираем все оценки из всех танцев
-                const allMarks = [];
-                t.places.forEach(place => {
-                    // Если место целое - добавляем его как оценки
-                    // Если с половинкой - это уже усредненное, используем как есть
-                    allMarks.push(place);
-                });
+                const allMarks = [...t.places].sort((a, b) => a - b);
                 return {
                     ...t,
-                    allMarks: allMarks.sort((a, b) => a - b)
+                    allMarks
                 };
             });
 
-            // Начинаем с оспариваемого места (startRank)
-            // и проверяем колонки 1-startRank, 1-(startRank+1) и т.д.
-            
             let currentPlace = startRank;
             const placed = new Set();
             
-            // Максимальное место для проверки
             const maxCheckPlace = Math.max(...skatingData.map(s => Math.max(...s.allMarks)));
             
             for (let col = startRank; col <= maxCheckPlace; col++) {
@@ -897,20 +926,17 @@
 
                 if (stats.length === 0) continue;
 
-                // Сортируем
                 stats.sort((a, b) => {
                     if (b.count !== a.count) return b.count - a.count;
                     return a.sum - b.sum;
                 });
 
-                // Проверяем на различия
                 const first = stats[0];
                 const second = stats[1];
                 
                 if (!second || first.count > second.count || 
                     (first.count === second.count && first.sum < second.sum)) {
                     
-                    // Есть различие
                     stats.forEach((s, idx) => {
                         if (!placed.has(s.participant.globalId)) {
                             s.participant.finalPlace = currentPlace + idx;
@@ -923,7 +949,6 @@
                 if (placed.size === tied.length) break;
             }
 
-            // Если остались неразмещенные - присваиваем среднее арифметическое
             const remaining = tied.filter(t => !placed.has(t.globalId));
             if (remaining.length > 0) {
                 const placesToShare = [];
@@ -956,7 +981,6 @@
                 let medal = '';
                 let isShared = !Number.isInteger(r.finalPlace);
                 
-                // Проверяем, делит ли кто-то еще это место
                 const samePlace = results.filter(x => Math.abs(x.finalPlace - r.finalPlace) < 0.001);
                 if (samePlace.length > 1) isShared = true;
                 

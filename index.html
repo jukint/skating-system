@@ -83,7 +83,6 @@
             <div class="info-badge rounded-xl p-4 mb-4">
                 <p class="text-sm text-indigo-200">
                     <strong>📋 Правила отбора:</strong> В каждый следующий танец проходят только 60% лучших участников по рейтингу предыдущего танца (округление вверх). 
-                    Например: из 10 участников → 6 в следующий танец, из 5 участников → 3 в следующий танец.
                 </p>
             </div>
             
@@ -97,14 +96,14 @@
             <!-- Error Panel for gaps -->
             <div id="gapsWarning" class="error-badge rounded-xl p-4 mb-4 hidden">
                 <p class="text-sm text-red-200">
-                    <strong>❌ Ошибка в расчете:</strong> Обнаружены пропуски в местах. Проверьте правильность введенных оценок.
+                    <strong>❌ Ошибка в расчете:</strong> Обнаружены пропуски в местах.
                 </p>
             </div>
 
             <!-- Success Panel for final results -->
             <div id="finalSuccess" class="success-badge rounded-xl p-4 mb-4 hidden">
                 <p class="text-sm text-emerald-200">
-                    <strong>✅ Расчет завершен!</strong> Итоговые результаты доступны в правой панели.
+                    <strong>✅ Расчет завершен!</strong> <span id="successMessage">Итоговые результаты доступны.</span>
                 </p>
             </div>
             
@@ -140,7 +139,6 @@
                             <thead>
                                 <tr class="border-b border-slate-700">
                                     <th class="name-col text-left p-3 text-slate-400 font-medium">ФИО Участника</th>
-                                    <!-- Judge headers will be inserted here -->
                                 </tr>
                             </thead>
                             <tbody id="participantsBody"></tbody>
@@ -231,7 +229,6 @@
             renderTable();
             updateCalculateButton();
             
-            // Скрываем сообщения об успехе/ошибках
             document.getElementById('finalSuccess').classList.add('hidden');
             document.getElementById('gapsWarning').classList.add('hidden');
         }
@@ -242,7 +239,7 @@
             
             if (activeParticipants.length === 0) {
                 btn.disabled = true;
-                btn.title = "Нет активных участников для расчета";
+                btn.title = "Нет активных участников";
             } else {
                 btn.disabled = false;
                 btn.title = "";
@@ -277,14 +274,12 @@
                                 pending ? 'bg-amber-900/50 text-amber-400 hover:bg-amber-900/70' :
                                 calculated ? 'bg-emerald-900/50 text-emerald-400 hover:bg-emerald-900/70' :
                                 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
-                        Танец ${i + 1} 
-                        ${statusBadge}
+                        Танец ${i + 1} ${statusBadge}
                     </button>
                 `;
             }
             container.innerHTML = html;
             document.getElementById('currentDanceTitle').textContent = `Танец ${currentDance + 1}`;
-            
             updateQualificationInfo();
         }
 
@@ -502,11 +497,11 @@
             }
             
             if (hasErrors) {
-                alert('Ошибка: Судьи дали одинаковые места разным участникам! Исправьте перед расчётом.');
+                alert('Ошибка: Судьи дали одинаковые места разным участникам!');
                 return;
             }
             
-            // Рассчитываем ТЕКУЩИЙ танец и все предыдущие
+            // Рассчитываем текущий и все предыдущие несчитанные танцы
             for (let d = 0; d <= currentDance; d++) {
                 if (!hasCalculated[d]) {
                     calculateDance(d);
@@ -520,22 +515,43 @@
             const judgeCount = judges;
             const majority = Math.floor(judgeCount / 2) + 1;
             
+            // ====== КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Проверяем ВСЕ ли танцы рассчитаны ======
+            // Создаем временный массив, включающий текущий танец как рассчитанный
+            const calculatedStatus = [...hasCalculated];
+            calculatedStatus[currentDance] = true; // Текущий только что рассчитан
+            
+            const allDancesCalculated = calculatedStatus.every(x => x);
+            const isLastDance = currentDance === danceCount - 1;
+            const isSingleDance = danceCount === 1;
+
+            console.log('=== DEBUG ===', {
+                hasCalculated: hasCalculated,
+                calculatedStatus: calculatedStatus,
+                allDancesCalculated: allDancesCalculated,
+                isLastDance: isLastDance,
+                isSingleDance: isSingleDance,
+                currentDance: currentDance,
+                danceCount: danceCount
+            });
+
             let logHtml = `<div class="p-4 bg-slate-800 rounded-lg mb-4">
                 <strong class="text-indigo-400">Параметры:</strong> 
-                ${participants.length} участников (в 1-м танце), ${judgeCount} судей, ${danceCount} танцев.<br>
-                <strong>Необходимое большинство:</strong> ${majority} из ${judgeCount}
+                ${participants.length} участников, ${judgeCount} судей, ${danceCount} танцев.<br>
+                <strong>Необходимое большинство:</strong> ${majority} из ${judgeCount}<br>
+                <strong>Все танцы рассчитаны:</strong> ${allDancesCalculated ? 'Да' : 'Нет'}
             </div>`;
 
             let hasGaps = false;
 
-            // Выводим результаты всех рассчитанных танцев
+            // Логирование всех танцев
             for (let d = 0; d < danceCount; d++) {
-                if (!hasCalculated[d]) continue;
+                if (!calculatedStatus[d]) continue;
                 
                 const results = dancesData[d].results;
+                if (!results) continue;
+                
                 const activeDancers = dancesData[d].participants.filter(p => p.status === 'active' || p.status === 'eliminated');
                 
-                // Проверяем на пропуски только среди активных/eliminated
                 const sortedPlaces = results.map(r => r.finalPlace).sort((a, b) => a - b);
                 let expectedPlace = 1;
                 for (const place of sortedPlaces) {
@@ -548,26 +564,14 @@
                 }
                 
                 logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg">`;
-                logHtml += `<h4 class="font-bold text-indigo-300 mb-3 text-lg">Танец ${d + 1} (Правила 5-8)</h4>`;
-                logHtml += `<p class="text-sm text-slate-400 mb-3">Участников: ${activeDancers.length}</p>`;
+                logHtml += `<h4 class="font-bold text-indigo-300 mb-3 text-lg">Танец ${d + 1}</h4>`;
                 
                 results.forEach(r => {
                     logHtml += `<div class="calculation-step">`;
                     logHtml += `<strong>${r.name}</strong>: место ${formatPlace(r.finalPlace)}<br>`;
-                    logHtml += `Оценки: ${r.places.join(', ')} → сорт: ${[...r.places].sort((a,b)=>a-b).join(', ')}<br>`;
+                    logHtml += `Оценки: ${r.places.join(', ')}<br>`;
                     r.calculation.forEach(c => {
-                        if (c.rule === '5') {
-                            logHtml += `<span class="text-emerald-400">Правило 5: Большинство ${c.count} в колонке 1-${c.column} (сумма ${c.sum})</span>`;
-                        } else if (c.rule === '6') {
-                            logHtml += `<span class="text-blue-400">Правило 6: Большее большинство ${c.count} (сумма ${c.sum})</span>`;
-                        } else if (c.rule === '7a') {
-                            logHtml += `<span class="text-yellow-400">Правило 7a: Равное большинство, меньшая сумма ${c.sum}</span>`;
-                        } else if (c.rule === '7b') {
-                            logHtml += `<span class="text-orange-400">Правило 7b: Следующая колонка 1-${c.column}, голосов ${c.count}, сумма ${c.sum}</span>`;
-                        } else if (c.rule === '8') {
-                            logHtml += `<span class="text-red-400">Правило 8: Среднее арифметическое ${c.value} (места ${c.start}-${c.end})</span>`;
-                        }
-                        logHtml += `<br>`;
+                        logHtml += `<span class="text-emerald-400">Правило ${c.rule}: ${c.column || ''} ${c.count || ''} ${c.sum || ''}</span><br>`;
                     });
                     logHtml += `</div>`;
                 });
@@ -575,8 +579,7 @@
                 if (d < danceCount - 1) {
                     const nextDance = dancesData[d + 1];
                     const qualifiedCount = nextDance.participants.filter(p => p.status === 'active').length;
-                    const totalInNext = nextDance.participants.filter(p => p.status !== 'pending').length;
-                    logHtml += `<p class="text-sm text-emerald-400 mt-3">В танец ${d + 2} прошли ${qualifiedCount} из ${totalInNext} участников</p>`;
+                    logHtml += `<p class="text-sm text-emerald-400 mt-3">В танец ${d + 2} прошли ${qualifiedCount}</p>`;
                 }
                 
                 logHtml += `</div>`;
@@ -584,6 +587,7 @@
 
             const gapsWarning = document.getElementById('gapsWarning');
             const finalSuccess = document.getElementById('finalSuccess');
+            const successMessage = document.getElementById('successMessage');
             
             if (hasGaps) {
                 gapsWarning.classList.remove('hidden');
@@ -594,24 +598,12 @@
 
             // ====== ИСПРАВЛЕННАЯ ЛОГИКА ОТОБРАЖЕНИЯ РЕЗУЛЬТАТОВ ======
             
-            // Проверяем, все ли танцы рассчитаны (включая текущий только что рассчитанный)
-            const allDancesCalculated = hasCalculated.every(x => x);
-            const isLastDance = currentDance === danceCount - 1;
-            const isSingleDance = danceCount === 1;
-
-            console.log('Debug:', {
-                allDancesCalculated,
-                isLastDance,
-                isSingleDance,
-                hasCalculated,
-                currentDance,
-                danceCount
-            });
-
             if (danceCount > 1 && allDancesCalculated) {
-                // ВСЕ танцы рассчитаны - показываем итоговые результаты (Правила 9-11)
+                // ВСЕ танцы рассчитаны - показываем итоговые результаты Правила 9-11
+                console.log('Показываем итоговые результаты (все танцы рассчитаны)');
+                
                 logHtml += `<div class="mt-6 p-4 bg-slate-800/50 rounded-lg border-t-2 border-purple-500">`;
-                logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">Итоговое место (Правила 9-11)</h4>`;
+                logHtml += `<h4 class="font-bold text-purple-300 mb-3 text-lg">ИТОГОВЫЕ МЕСТА (Правила 9-11)</h4>`;
                 
                 const danceResults = dancesData.map(d => d.results);
                 const finalResults = calculateFinalPlacement(danceResults, danceCount, judgeCount);
@@ -629,37 +621,45 @@
                 logHtml += `</div>`;
                 
                 displayResults(finalResults);
+                successMessage.textContent = "Итоговые результаты по всем танцам рассчитаны (Правила 9-11)";
                 finalSuccess.classList.remove('hidden');
                 
             } else if (isSingleDance) {
-                // Один танец - показываем его результаты
+                // Один танец
+                console.log('Показываем результаты одного танца');
+                
                 displayResults(dancesData[0].results.map(r => ({
                     ...r,
                     totalSum: r.finalPlace,
                     finalPlace: r.finalPlace,
                     rule: '-'
                 })));
+                successMessage.textContent = "Результаты танца рассчитаны";
                 finalSuccess.classList.remove('hidden');
                 
             } else if (isLastDance && !allDancesCalculated) {
                 // Последний танец, но не все предыдущие рассчитаны
-                // Показываем результаты текущего танца с предупреждением
+                console.log('Последний танец, но не все предыдущие рассчитаны');
+                
                 displayResults(dancesData[currentDance].results.map(r => ({
                     ...r,
                     totalSum: r.finalPlace,
                     finalPlace: r.finalPlace,
-                    rule: 'Требуется расчет всех танцев'
+                    rule: '⚠️ Требуется расчет всех танцев для итогов'
                 })));
                 
                 logHtml += `<div class="mt-6 p-4 bg-amber-900/50 rounded-lg border-t-2 border-amber-500">`;
-                logHtml += `<h4 class="font-bold text-amber-300 mb-3 text-lg">⚠️ Предупреждение</h4>`;
+                logHtml += `<h4 class="font-bold text-amber-300 mb-3 text-lg">⚠️ ВНИМАНИЕ</h4>`;
                 logHtml += `<p class="text-amber-200">Для расчета итоговых мест (Правила 9-11) необходимо рассчитать все танцы. Вернитесь к предыдущим танцам и нажмите "Рассчитать" для каждого.</p>`;
                 logHtml += `</div>`;
                 
-                finalSuccess.classList.add('hidden');
+                successMessage.textContent = "Результаты текущего танца рассчитаны. Для итогов рассчитайте все танцы.";
+                finalSuccess.classList.remove('hidden');
                 
             } else {
-                // Промежуточный танец - показываем результаты текущего танца
+                // Промежуточный танец
+                console.log('Показываем результаты промежуточного танца');
+                
                 displayResults(dancesData[currentDance].results.map(r => ({
                     ...r,
                     totalSum: r.finalPlace,
@@ -667,13 +667,15 @@
                     rule: '-'
                 })));
                 
-                if (allDancesCalculated) {
-                    finalSuccess.classList.remove('hidden');
-                }
+                successMessage.textContent = `Результаты танца ${currentDance + 1} рассчитаны`;
+                finalSuccess.classList.remove('hidden');
             }
 
             document.getElementById('calculationLog').classList.remove('hidden');
             document.getElementById('logContent').innerHTML = logHtml;
+            
+            // Обновляем hasCalculated после отображения (для следующих проверок)
+            hasCalculated[currentDance] = true;
             
             renderDanceTabs();
             renderTable();
@@ -687,7 +689,6 @@
             
             const results = calculateSingleDanceInternal(activeParticipants, judges);
             dancesData[danceIndex].results = results;
-            hasCalculated[danceIndex] = true;
             
             results.forEach(r => {
                 const participant = dancesData[danceIndex].participants.find(p => p.id === r.id);
@@ -699,9 +700,13 @@
 
         function updateSubsequentDances() {
             for (let d = 0; d < dancesData.length - 1; d++) {
-                if (!hasCalculated[d]) continue;
+                // Проверяем, рассчитан ли текущий танец (включая только что рассчитанный)
+                const isCurrentCalculated = hasCalculated[d] || d === currentDance;
+                if (!isCurrentCalculated) continue;
                 
                 const results = dancesData[d].results;
+                if (!results) continue;
+                
                 const sortedByPlace = [...results].sort((a, b) => a.finalPlace - b.finalPlace);
                 
                 const activeCount = dancesData[d].participants.filter(p => p.status === 'active').length;
@@ -925,6 +930,7 @@
             const participantMap = new Map();
             
             danceResults.forEach((dance, idx) => {
+                if (!dance) return;
                 dance.forEach(p => {
                     if (!participantMap.has(p.globalId)) {
                         participantMap.set(p.globalId, {

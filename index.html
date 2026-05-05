@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Скейтинг-система — Подсчёт результатов бальных танцев</title>
+    <title>Скейтинг-система</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
@@ -21,13 +16,7 @@
             min-height: 100vh;
             line-height: 1.6;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         header {
             text-align: center;
             padding: 40px 20px;
@@ -37,18 +26,7 @@
             margin-bottom: 30px;
             box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
         }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
-        }
-
-        header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
+        header h1 { font-size: 2.5em; margin-bottom: 10px; font-weight: 300; }
         .card {
             background: white;
             border-radius: 16px;
@@ -57,7 +35,6 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             border: 1px solid #eef2f7;
         }
-
         .card h2 {
             color: #667eea;
             margin-bottom: 20px;
@@ -67,7 +44,6 @@
             align-items: center;
             gap: 10px;
         }
-
         .card h2::before {
             content: '';
             width: 4px;
@@ -75,26 +51,22 @@
             background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 2px;
         }
-
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
-
         .form-group {
             display: flex;
             flex-direction: column;
         }
-
         .form-group label {
             font-weight: 600;
             color: #4a5568;
             margin-bottom: 8px;
             font-size: 0.95em;
         }
-
         .form-group input, .form-group select {
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
@@ -103,14 +75,12 @@
             transition: all 0.3s;
             background: #fafbfc;
         }
-
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
             background: white;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
         .btn {
             padding: 14px 28px;
             border: none;
@@ -124,62 +94,43 @@
             gap: 8px;
             margin: 5px;
         }
-
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5); }
         .btn-success {
             background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
             color: white;
             box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
         }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
-        }
-
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5); }
         .btn-warning {
             background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
             color: white;
         }
-
         .btn-danger {
             background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
             color: white;
         }
-
         .btn-secondary {
             background: #edf2f7;
             color: #4a5568;
         }
-
-        .btn-secondary:hover {
-            background: #e2e8f0;
-        }
-
+        .btn-secondary:hover { background: #e2e8f0; }
         .table-container {
             overflow-x: auto;
             margin: 20px 0;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
             font-size: 0.95em;
         }
-
         th {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -189,37 +140,14 @@
             position: sticky;
             top: 0;
         }
-
         td {
             padding: 12px 10px;
             text-align: center;
             border-bottom: 1px solid #edf2f7;
         }
-
-        tr:hover {
-            background: #f7fafc;
-        }
-
-        tr.eliminated {
-            background: #fff5f5;
-            opacity: 0.7;
-        }
-
-        tr.qualified {
-            background: #f0fff4;
-        }
-
-        .select-yes {
-            background: #c6f6d5;
-            color: #22543d;
-            font-weight: bold;
-        }
-
-        .select-no {
-            background: #fed7d7;
-            color: #742a2a;
-        }
-
+        tr:hover { background: #f7fafc; }
+        tr.eliminated { background: #fff5f5; opacity: 0.7; }
+        tr.qualified { background: #f0fff4; }
         .score-input {
             width: 60px;
             padding: 8px;
@@ -228,12 +156,7 @@
             text-align: center;
             font-size: 1em;
         }
-
-        .score-input:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
+        .score-input:focus { border-color: #667eea; outline: none; }
         .phase-indicator {
             display: inline-block;
             padding: 6px 14px;
@@ -242,46 +165,24 @@
             font-weight: 600;
             margin: 5px;
         }
-
-        .phase-qualification {
-            background: #ebf8ff;
-            color: #2b6cb0;
-        }
-
-        .phase-semifinal {
-            background: #faf5ff;
-            color: #6b46c1;
-        }
-
-        .phase-final {
-            background: #fffaf0;
-            color: #c05621;
-        }
-
+        .phase-qualification { background: #ebf8ff; color: #2b6cb0; }
+        .phase-semifinal { background: #faf5ff; color: #6b46c1; }
+        .phase-final { background: #fffaf0; color: #c05621; }
         .results-panel {
             background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
         }
-
         .place-1 { background: linear-gradient(135deg, #ffd700, #ffed4a); color: #744210; font-weight: bold; }
         .place-2 { background: linear-gradient(135deg, #c0c0c0, #e2e8f0); color: #2d3748; font-weight: bold; }
         .place-3 { background: linear-gradient(135deg, #cd7f32, #ed8936); color: white; font-weight: bold; }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .step-number {
             display: inline-flex;
             align-items: center;
@@ -294,7 +195,6 @@
             font-weight: bold;
             margin-right: 10px;
         }
-
         .info-box {
             background: #ebf8ff;
             border-left: 4px solid #4299e1;
@@ -303,7 +203,6 @@
             margin: 15px 0;
             color: #2c5282;
         }
-
         .warning-box {
             background: #fffaf0;
             border-left: 4px solid #ed8936;
@@ -312,7 +211,6 @@
             margin: 15px 0;
             color: #7c2d12;
         }
-
         .success-box {
             background: #f0fff4;
             border-left: 4px solid #48bb78;
@@ -321,42 +219,35 @@
             margin: 15px 0;
             color: #22543d;
         }
-
         .protocol-table th {
             background: #4a5568;
             font-size: 0.85em;
             padding: 10px 6px;
         }
-
         .protocol-table td {
             font-size: 0.9em;
             padding: 8px 6px;
         }
-
         .majority-cell {
             background: #c6f6d5;
             font-weight: bold;
             color: #22543d;
         }
-
         .sum-cell {
             background: #fef5e7;
             font-weight: bold;
             color: #744210;
         }
-
         .final-place {
             font-size: 1.2em;
             font-weight: bold;
         }
-
         .tabs {
             display: flex;
             gap: 5px;
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-
         .tab {
             padding: 10px 20px;
             border: none;
@@ -367,64 +258,22 @@
             font-weight: 600;
             transition: all 0.3s;
         }
-
         .tab.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .export-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin: 20px 0;
         }
-
-        .dance-name-input {
-            width: 150px;
-            padding: 8px;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .total-row {
-            background: #edf2f7;
-            font-weight: bold;
-        }
-
+        .total-row { background: #edf2f7; font-weight: bold; }
         @media print {
-            .btn, .tabs, .no-print {
-                display: none !important;
-            }
-            .card {
-                break-inside: avoid;
-                box-shadow: none;
-                border: 1px solid #ddd;
-            }
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            .btn, .tabs, .no-print { display: none !important; }
+            .card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
         }
     </style>
 <base target="_blank">
@@ -436,7 +285,7 @@
             <p>Система подсчёта результатов судейства</p>
         </header>
 
-        <!-- ШАГ 1: Настройка турнира -->
+        <!-- ШАГ 1: Настройка -->
         <div id="step1" class="card fade-in">
             <h2><span class="step-number">1</span>Настройка турнира</h2>
             <div class="form-grid">
@@ -465,9 +314,7 @@
                 <strong>Золотое правило ОРТО:</strong> В отборочных турах отбираются 2/3 участников (но не менее 1/2). 
                 Например, из 12 участников → 8 в следующий тур, из 8 → 5-6, и так до финала (макс. <span id="previewFinalists">6</span> пар).
             </div>
-            <button class="btn btn-primary" onclick="setupTournament()">
-                Создать турнир →
-            </button>
+            <button class="btn btn-primary" onclick="setupTournament()">Создать турнир →</button>
         </div>
 
         <!-- ШАГ 2: Отборочные туры -->
@@ -475,14 +322,11 @@
             <h2><span class="step-number">2</span>Отборочные туры</h2>
             <div id="qualificationInfo"></div>
             <div id="qualificationTabs" class="tabs"></div>
+            <div id="qualificationButtons" class="no-print" style="margin-bottom: 15px;"></div>
             <div id="qualificationContent"></div>
             <div class="export-buttons no-print">
-                <button class="btn btn-success" onclick="calculateQualificationRound()">
-                    Подвести итоги тура
-                </button>
-                <button class="btn btn-secondary" onclick="resetQualification()">
-                    Сбросить
-                </button>
+                <button class="btn btn-success" onclick="calculateQualificationRound()">Подвести итоги тура</button>
+                <button class="btn btn-secondary" onclick="resetQualification()">Сбросить</button>
             </div>
         </div>
 
@@ -490,11 +334,10 @@
         <div id="step3" class="card hidden">
             <h2><span class="step-number">3</span>Полуфинал</h2>
             <div id="semifinalInfo"></div>
+            <div id="semifinalButtons" class="no-print" style="margin-bottom: 15px;"></div>
             <div id="semifinalContent"></div>
             <div class="export-buttons no-print">
-                <button class="btn btn-success" onclick="calculateSemifinal()">
-                    Подвести итоги полуфинала
-                </button>
+                <button class="btn btn-success" onclick="calculateSemifinal()">Подвести итоги полуфинала</button>
             </div>
         </div>
 
@@ -503,1215 +346,943 @@
             <h2><span class="step-number">4</span>Финал</h2>
             <div id="finalInfo"></div>
             <div id="finalTabs" class="tabs"></div>
+            <div id="finalButtons" class="no-print" style="margin-bottom: 15px;"></div>
             <div id="finalContent"></div>
             <div class="export-buttons no-print">
-                <button class="btn btn-success" onclick="calculateFinal()">
-                    Подвести итоги финала
-                </button>
+                <button class="btn btn-success" onclick="calculateFinal()">Подвести итоги финала</button>
             </div>
         </div>
 
-        <!-- ШАГ 5: Итоговые результаты -->
+        <!-- ШАГ 5: Итоги -->
         <div id="step5" class="card hidden">
             <h2><span class="step-number">5</span>Итоговые результаты</h2>
             <div id="finalResults"></div>
             <div class="export-buttons no-print">
-                <button class="btn btn-primary" onclick="exportToPDF()">
-                    📄 Экспорт в PDF
-                </button>
-                <button class="btn btn-primary" onclick="exportToExcel()">
-                    📊 Экспорт в Excel
-                </button>
-                <button class="btn btn-secondary" onclick="window.print()">
-                    🖨️ Печать
-                </button>
-                <button class="btn btn-warning" onclick="location.reload()">
-                    🔄 Новый турнир
-                </button>
+                <button class="btn btn-primary" onclick="exportToPDF()">📄 Экспорт в PDF</button>
+                <button class="btn btn-primary" onclick="exportToExcel()">📊 Экспорт в Excel</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ Печать</button>
+                <button class="btn btn-warning" onclick="location.reload()">🔄 Новый турнир</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
-        let tournament = {
-            name: '',
-            numCouples: 0,
-            numJudges: 0,
-            numDances: 0,
-            maxFinalists: 0,
-            couples: [],
-            judges: [],
-            dances: [],
-            qualificationRounds: [],
-            currentQualRound: 0,
-            semifinalResults: null,
-            finalResults: null,
-            eliminatedCouples: []
-        };
+<script>
+// ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+const T = {
+    name: '', numCouples: 0, numJudges: 0, numDances: 0, maxFinalists: 0,
+    couples: [], judges: [], dances: [],
+    qualificationPath: [], qualificationRounds: [], currentQualRound: 0,
+    semifinalData: null,
+    finalData: null,
+    finalStandings: null,
+    eliminated: []
+};
 
-        // ==================== УТИЛИТЫ ====================
-        function $(id) { return document.getElementById(id); }
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id).classList.remove('hidden'); }
+function hide(id) { $(id).classList.add('hidden'); }
+function getMajority(n) { return Math.floor(n / 2) + 1; }
 
-        function show(id) { $(id).classList.remove('hidden'); }
-        function hide(id) { $(id).classList.add('hidden'); }
+function getNextRoundCount(current) {
+    let next = Math.ceil(current * 2 / 3);
+    let minHalf = Math.ceil(current / 2);
+    if (next < minHalf) next = minHalf;
+    if (next === current && current > 3) next = current - 1;
+    return next;
+}
 
-        function getMajority(n) {
-            return Math.floor(n / 2) + 1;
+function calculateQualificationPath(start, maxFinal) {
+    let path = [start];
+    let current = start;
+    while (current > maxFinal) {
+        let next = getNextRoundCount(current);
+        if (next >= current) next = current - 1;
+        if (next < maxFinal) next = maxFinal;
+        path.push(next);
+        current = next;
+    }
+    return path;
+}
+
+// ==================== ШАГ 1: НАСТРОЙКА ====================
+function setupTournament() {
+    T.name = $('tournamentName').value || 'Турнир без названия';
+    T.numCouples = parseInt($('numCouples').value);
+    T.numJudges = parseInt($('numJudges').value);
+    T.numDances = parseInt($('numDances').value);
+    T.maxFinalists = parseInt($('maxFinalists').value);
+
+    if (T.numCouples < T.maxFinalists) {
+        alert('Количество участников должно быть больше максимума финалистов!');
+        return;
+    }
+
+    T.couples = [];
+    for (let i = 1; i <= T.numCouples; i++) {
+        T.couples.push({ id: i, number: i, name: `Пара №${i}`, active: true });
+    }
+
+    T.judges = [];
+    for (let i = 1; i <= T.numJudges; i++) {
+        T.judges.push({ id: i, name: String.fromCharCode(64 + i) });
+    }
+
+    T.dances = [];
+    for (let i = 0; i < T.numDances; i++) {
+        T.dances.push({ id: i, name: `Танец ${i+1}` });
+    }
+
+    T.qualificationPath = calculateQualificationPath(T.numCouples, T.maxFinalists);
+    T.qualificationRounds = [];
+    T.semifinalData = null;
+    T.finalData = null;
+    T.finalStandings = null;
+    T.eliminated = [];
+
+    hide('step1');
+    show('step2');
+    initQualification();
+}
+
+// ==================== ОТБОРОЧНЫЕ ТУРЫ ====================
+function initQualification() {
+    const info = $('qualificationInfo');
+    const path = T.qualificationPath;
+
+    let html = `<div class="info-box"><strong>Путь турнира:</strong> `;
+    for (let i = 0; i < path.length - 1; i++) {
+        html += `${path[i]} → `;
+    }
+    html += `Финал (${path[path.length-1]} пар)</div>`;
+    html += `<div class="warning-box">Судьи ставят оценки: <strong>1</strong> (отобрать) или <strong>0</strong> (не отобрать).</div>`;
+    info.innerHTML = html;
+
+    const tabsContainer = $('qualificationTabs');
+    tabsContainer.innerHTML = '';
+
+    for (let i = 0; i < path.length - 1; i++) {
+        const tab = document.createElement('button');
+        tab.className = 'tab' + (i === 0 ? ' active' : '');
+        tab.textContent = `Отбор ${i+1}: ${path[i]}→${path[i+1]}`;
+        tab.onclick = () => switchQualRound(i);
+        tabsContainer.appendChild(tab);
+    }
+
+    T.currentQualRound = 0;
+    renderQualificationRound(0);
+}
+
+function switchQualRound(roundIdx) {
+    T.currentQualRound = roundIdx;
+    document.querySelectorAll('#qualificationTabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', i === roundIdx);
+    });
+    renderQualificationRound(roundIdx);
+}
+
+function getActiveCouplesForRound(roundIdx) {
+    let active = T.couples.filter(c => c.active);
+    if (roundIdx > 0) {
+        const prev = T.qualificationRounds[roundIdx - 1];
+        if (prev) {
+            active = active.filter(c => prev.results.find(r => r.coupleId === c.id)?.qualified);
         }
+    }
+    return active;
+}
 
-        // Золотое правило ОРТО: отбираем ~2/3, но не менее 1/2
-        function getNextRoundCount(current) {
-            let next = Math.ceil(current * 2 / 3);
-            let minHalf = Math.ceil(current / 2);
-            if (next < minHalf) next = minHalf;
-            if (next === current && current > 3) next = current - 1;
-            return next;
+function renderQualificationRound(roundIdx) {
+    const active = getActiveCouplesForRound(roundIdx);
+    const nextCount = T.qualificationPath[roundIdx + 1];
+    const content = $('qualificationContent');
+    const buttons = $('qualificationButtons');
+
+    buttons.innerHTML = `
+        <button class="btn btn-secondary" onclick="fillRandomQual(${roundIdx})">🎲 Заполнить случайно</button>
+        <button class="btn btn-secondary" onclick="clearQual(${roundIdx})">❌ Очистить</button>
+    `;
+
+    let html = `<div class="success-box">Тур ${roundIdx + 1}: отбираем ${nextCount} из ${active.length} пар.</div>`;
+    html += `<div class="table-container"><table><thead><tr><th>Пара</th>`;
+    T.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
+    html += `<th>Сумма</th><th>Статус</th></tr></thead><tbody>`;
+
+    active.forEach(c => {
+        const rowId = `qual-row-${c.id}`;
+        html += `<tr id="${rowId}"><td><strong>Пара №${c.number}</strong></td>`;
+        T.judges.forEach(j => {
+            html += `<td><select class="score-input" id="q-${roundIdx}-${c.id}-${j.id}" onchange="updateQualSum(${roundIdx},${c.id})">
+                <option value="0" selected>0</option><option value="1">1</option>
+            </select></td>`;
+        });
+        html += `<td id="q-sum-${roundIdx}-${c.id}" class="total-row">0</td>`;
+        html += `<td id="q-st-${roundIdx}-${c.id}">-</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+    content.innerHTML = html;
+}
+
+function updateQualSum(roundIdx, coupleId) {
+    let sum = 0;
+    T.judges.forEach(j => {
+        sum += parseInt($(`q-${roundIdx}-${coupleId}-${j.id}`).value) || 0;
+    });
+    $(`q-sum-${roundIdx}-${coupleId}`).textContent = sum;
+}
+
+function fillRandomQual(roundIdx) {
+    const active = getActiveCouplesForRound(roundIdx);
+    active.forEach(c => {
+        T.judges.forEach(j => {
+            $(`q-${roundIdx}-${c.id}-${j.id}`).value = Math.random() < 0.6 ? '1' : '0';
+        });
+        updateQualSum(roundIdx, c.id);
+    });
+}
+
+function clearQual(roundIdx) {
+    const active = getActiveCouplesForRound(roundIdx);
+    active.forEach(c => {
+        T.judges.forEach(j => {
+            $(`q-${roundIdx}-${c.id}-${j.id}`).value = '0';
+        });
+        updateQualSum(roundIdx, c.id);
+    });
+}
+
+function calculateQualificationRound() {
+    const roundIdx = T.currentQualRound;
+    const nextCount = T.qualificationPath[roundIdx + 1];
+    const active = getActiveCouplesForRound(roundIdx);
+
+    let results = [];
+    active.forEach(c => {
+        let sum = 0;
+        T.judges.forEach(j => {
+            sum += parseInt($(`q-${roundIdx}-${c.id}-${j.id}`).value) || 0;
+        });
+        results.push({ coupleId: c.id, coupleNumber: c.number, sum: sum, qualified: false });
+    });
+
+    results.sort((a, b) => b.sum - a.sum);
+
+    let qualified = 0;
+    let lastSum = null;
+    for (let i = 0; i < results.length; i++) {
+        if (qualified < nextCount) {
+            results[i].qualified = true;
+            lastSum = results[i].sum;
+            qualified++;
+        } else if (results[i].sum === lastSum) {
+            results[i].qualified = true;
+            qualified++;
         }
+    }
 
-        function calculateQualificationPath(start, maxFinal) {
-            let path = [start];
-            let current = start;
-            while (current > maxFinal) {
-                let next = getNextRoundCount(current);
-                if (next >= current) next = current - 1;
-                if (next < maxFinal) next = maxFinal;
-                path.push(next);
-                current = next;
-            }
-            return path;
+    T.qualificationRounds[roundIdx] = { round: roundIdx + 1, results: results, nextCount: nextCount };
+
+    results.forEach(r => {
+        const row = $(`qual-row-${r.coupleId}`);
+        const st = $(`q-st-${roundIdx}-${r.coupleId}`);
+        if (r.qualified) {
+            row.classList.add('qualified');
+            st.innerHTML = '<span style="color:#48bb78;font-weight:bold;">✓ Прошла</span>';
+        } else {
+            row.classList.add('eliminated');
+            st.innerHTML = '<span style="color:#f56565;">✗ Выбыла</span>';
+            const couple = T.couples.find(c => c.id === r.coupleId);
+            if (couple) couple.active = false;
         }
+    });
 
-        // ==================== ШАГ 1: НАСТРОЙКА ====================
-        function setupTournament() {
-            tournament.name = $('tournamentName').value || 'Турнир без названия';
-            tournament.numCouples = parseInt($('numCouples').value);
-            tournament.numJudges = parseInt($('numJudges').value);
-            tournament.numDances = parseInt($('numDances').value);
-            tournament.maxFinalists = parseInt($('maxFinalists').value);
+    if (roundIdx < T.qualificationPath.length - 2) {
+        setTimeout(() => switchQualRound(roundIdx + 1), 500);
+    } else {
+        setTimeout(() => { hide('step2'); show('step3'); initSemifinal(); }, 800);
+    }
+}
 
-            if (tournament.numCouples < tournament.maxFinalists) {
-                alert('Количество участников должно быть больше максимума финалистов!');
-                return;
+function resetQualification() {
+    T.couples.forEach(c => c.active = true);
+    T.qualificationRounds = [];
+    renderQualificationRound(0);
+}
+
+// ==================== ПОЛУФИНАЛ ====================
+function initSemifinal() {
+    const info = $('semifinalInfo');
+    const buttons = $('semifinalButtons');
+    const content = $('semifinalContent');
+    const active = T.couples.filter(c => c.active);
+
+    info.innerHTML = `<div class="success-box">Полуфинал: ${active.length} пар. Судьи расставляют места от 1 до ${active.length}.</div>`;
+
+    buttons.innerHTML = `
+        <button class="btn btn-secondary" onclick="fillRandomSemi()">🎲 Заполнить случайно</button>
+        <button class="btn btn-secondary" onclick="clearSemi()">❌ Очистить</button>
+    `;
+
+    // Если есть сохранённые данные - восстанавливаем
+    const hasData = T.semifinalData !== null;
+    const savedMarks = hasData ? T.semifinalData.marks : null;
+    const savedResults = hasData ? T.semifinalData.results : null;
+
+    let html = `<div class="table-container"><table><thead><tr><th>Пара</th>`;
+    T.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
+    html += `<th>Результат</th></tr></thead><tbody>`;
+
+    active.forEach(c => {
+        html += `<tr><td><strong>Пара №${c.number}</strong></td>`;
+        T.judges.forEach(j => {
+            let val = '';
+            if (savedMarks) {
+                const cm = savedMarks.find(m => m.coupleId === c.id);
+                if (cm && cm.marks[j.id - 1]) val = cm.marks[j.id - 1];
             }
+            html += `<td><input type="number" class="score-input" id="s-${c.id}-${j.id}" min="1" max="${active.length}" value="${val}" placeholder="-"></td>`;
+        });
 
-            // Генерация участников
-            tournament.couples = [];
-            for (let i = 1; i <= tournament.numCouples; i++) {
-                tournament.couples.push({
-                    id: i,
-                    number: i,
-                    name: `Пара №${i}`,
-                    active: true
-                });
-            }
-
-            // Генерация судей
-            tournament.judges = [];
-            for (let i = 1; i <= tournament.numJudges; i++) {
-                tournament.judges.push({
-                    id: i,
-                    name: String.fromCharCode(64 + i) // A, B, C...
-                });
-            }
-
-            // Генерация танцев
-            const danceNames = Array.from({length: 10}, (_, i) => `Танец ${i+1}`);
-            tournament.dances = [];
-            for (let i = 0; i < tournament.numDances; i++) {
-                tournament.dances.push({
-                    id: i,
-                    name: danceNames[i] || `Танец ${i+1}`
-                });
-            }
-
-            // Расчёт пути отборочных туров
-            const path = calculateQualificationPath(tournament.numCouples, tournament.maxFinalists);
-            tournament.qualificationPath = path;
-            tournament.qualificationRounds = [];
-
-            hide('step1');
-            show('step2');
-            initQualification();
-        }
-
-        // ==================== ОТБОРОЧНЫЕ ТУРЫ ====================
-        function initQualification() {
-            const info = $('qualificationInfo');
-            const path = tournament.qualificationPath;
-
-            let html = `<div class="info-box"><strong>Путь турнира:</strong> `;
-            for (let i = 0; i < path.length - 1; i++) {
-                html += `${path[i]} → `;
-            }
-            html += `Финал (${path[path.length-1]} пар)</div>`;
-            html += `<div class="warning-box">Судьи ставят оценки: <strong>1</strong> (отобрать) или <strong>0</strong> (не отобрать). 
-                     Проходят пары с наибольшим количеством «1». При равенстве — решение главного судьи.</div>`;
-            info.innerHTML = html;
-
-            // Создаём табы для отборочных туров
-            const tabsContainer = $('qualificationTabs');
-            tabsContainer.innerHTML = '';
-
-            for (let i = 0; i < path.length - 1; i++) {
-                const tab = document.createElement('button');
-                tab.className = 'tab' + (i === 0 ? ' active' : '');
-                tab.textContent = `Отбор ${i+1}: ${path[i]}→${path[i+1]}`;
-                tab.onclick = () => switchQualRound(i);
-                tabsContainer.appendChild(tab);
-            }
-
-            tournament.currentQualRound = 0;
-            renderQualificationRound(0);
-        }
-
-        function switchQualRound(roundIdx) {
-            tournament.currentQualRound = roundIdx;
-            document.querySelectorAll('#qualificationTabs .tab').forEach((t, i) => {
-                t.classList.toggle('active', i === roundIdx);
-            });
-            renderQualificationRound(roundIdx);
-        }
-
-        function renderQualificationRound(roundIdx) {
-            const path = tournament.qualificationPath;
-            const currentCount = path[roundIdx];
-            const nextCount = path[roundIdx + 1];
-
-            // Определяем активных участников для этого тура
-            let activeCouples = tournament.couples.filter(c => c.active);
-
-            // Если это не первый тур, берём только тех, кто прошёл предыдущий
-            if (roundIdx > 0) {
-                const prevRound = tournament.qualificationRounds[roundIdx - 1];
-                if (prevRound) {
-                    activeCouples = activeCouples.filter(c => 
-                        prevRound.results.find(r => r.coupleId === c.id)?.qualified
-                    );
-                }
-            }
-
-            const content = $('qualificationContent');
-
-            let html = `<div class="success-box">Тур ${roundIdx + 1}: отбираем ${nextCount} из ${activeCouples.length} пар. 
-                       Необходимо ${getMajority(tournament.numJudges)} голосов из ${tournament.numJudges} для уверенного прохода.</div>`;
-
-            html += `<div class="no-print" style="margin-bottom: 15px;">
-                <button class="btn btn-secondary" onclick="fillRandomQualification(${roundIdx})">
-                    🎲 Заполнить случайно
-                </button>
-                <button class="btn btn-secondary" onclick="clearQualification(${roundIdx})">
-                    ❌ Очистить
-                </button>
-            </div>`;
-            html += `<div class="table-container"><table><thead><tr><th>Пара</th>`;
-            tournament.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
-            html += `<th>Сумма</th><th>Статус</th></tr></thead><tbody>`;
-
-            activeCouples.forEach(couple => {
-                html += `<tr id="qual-row-${couple.id}"><td><strong>Пара №${couple.number}</strong></td>`;
-                tournament.judges.forEach(judge => {
-                    html += `<td>
-                        <select class="score-input" id="qual-${roundIdx}-${couple.id}-${judge.id}" 
-                                onchange="updateQualTotal(${roundIdx}, ${couple.id})">
-                            <option value="0" selected>0</option>
-                            <option value="1">1</option>
-                        </select>
-                    </td>`;
-                });
-                html += `<td id="qual-sum-${roundIdx}-${couple.id}" class="total-row">0</td>`;
-                html += `<td id="qual-status-${roundIdx}-${couple.id}">-</td></tr>`;
-            });
-
-            html += `</tbody></table></div>`;
-            content.innerHTML = html;
-        }
-
-        function updateQualTotal(roundIdx, coupleId) {
-            let sum = 0;
-            tournament.judges.forEach(judge => {
-                const val = parseInt($(`qual-${roundIdx}-${coupleId}-${judge.id}`).value) || 0;
-                sum += val;
-            });
-            $(`qual-sum-${roundIdx}-${coupleId}`).textContent = sum;
-        }
-
-        function calculateQualificationRound() {
-            const roundIdx = tournament.currentQualRound;
-            const path = tournament.qualificationPath;
-            const nextCount = path[roundIdx + 1];
-
-            let activeCouples = tournament.couples.filter(c => c.active);
-            if (roundIdx > 0) {
-                const prevRound = tournament.qualificationRounds[roundIdx - 1];
-                if (prevRound) {
-                    activeCouples = activeCouples.filter(c => 
-                        prevRound.results.find(r => r.coupleId === c.id)?.qualified
-                    );
-                }
-            }
-
-            let results = [];
-            activeCouples.forEach(couple => {
-                let sum = 0;
-                tournament.judges.forEach(judge => {
-                    const val = parseInt($(`qual-${roundIdx}-${couple.id}-${judge.id}`).value) || 0;
-                    sum += val;
-                });
-                results.push({
-                    coupleId: couple.id,
-                    coupleNumber: couple.number,
-                    sum: sum,
-                    qualified: false
-                });
-            });
-
-            // Сортируем по убыванию суммы
-            results.sort((a, b) => b.sum - a.sum);
-
-            // Отбираем nextCount пар
-            let qualified = 0;
-            let lastQualifyingSum = null;
-
-            for (let i = 0; i < results.length; i++) {
-                if (qualified < nextCount) {
-                    results[i].qualified = true;
-                    lastQualifyingSum = results[i].sum;
-                    qualified++;
-                } else if (results[i].sum === lastQualifyingSum) {
-                    // Равенство на границе — по золотому правилу допускаем всех с равной суммой
-                    results[i].qualified = true;
-                    qualified++;
-                }
-            }
-
-            // Сохраняем результаты тура
-            tournament.qualificationRounds[roundIdx] = {
-                round: roundIdx + 1,
-                results: results,
-                nextCount: nextCount
-            };
-
-            // Обновляем визуализацию
-            results.forEach(r => {
-                const row = $(`qual-row-${r.coupleId}`);
-                const statusCell = $(`qual-status-${roundIdx}-${r.coupleId}`);
-                if (r.qualified) {
-                    row.classList.add('qualified');
-                    statusCell.innerHTML = '<span style="color: #48bb78; font-weight: bold;">✓ Прошла</span>';
-                } else {
-                    row.classList.add('eliminated');
-                    statusCell.innerHTML = '<span style="color: #f56565;">✗ Выбыла</span>';
-                    // Помечаем пару как выбывшую
-                    const couple = tournament.couples.find(c => c.id === r.coupleId);
-                    if (couple) couple.active = false;
-                }
-            });
-
-            // Проверяем, есть ли ещё отборочные туры
-            if (roundIdx < path.length - 2) {
-                // Переходим к следующему туру
-                setTimeout(() => {
-                    switchQualRound(roundIdx + 1);
-                }, 500);
-            } else {
-                // Переходим к полуфиналу
-                setTimeout(() => {
-                    hide('step2');
-                    show('step3');
-                    initSemifinal();
-                }, 800);
+        let resText = '-';
+        let resClass = 'final-place';
+        if (savedResults) {
+            const res = savedResults.find(r => r.coupleId === c.id);
+            if (res) {
+                resText = res.place;
+                if (res.place === 1) resClass = 'final-place place-1';
+                else if (res.place === 2) resClass = 'final-place place-2';
+                else if (res.place === 3) resClass = 'final-place place-3';
             }
         }
+        html += `<td id="s-res-${c.id}" class="${resClass}">${resText}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
 
-        function resetQualification() {
-            tournament.couples.forEach(c => c.active = true);
-            tournament.qualificationRounds = [];
-            renderQualificationRound(0);
+    if (hasData && savedResults && savedMarks) {
+        html += buildSkatingProtocol(savedResults, savedMarks, T.numJudges, 'Протокол полуфинала');
+    }
+
+    content.innerHTML = html;
+}
+
+function fillRandomSemi() {
+    const active = T.couples.filter(c => c.active);
+    const n = active.length;
+    T.judges.forEach(j => {
+        let places = [];
+        for (let i = 1; i <= n; i++) places.push(i);
+        for (let i = places.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [places[i], places[j]] = [places[j], places[i]];
         }
+        active.forEach((c, idx) => {
+            const el = $(`s-${c.id}-${j.id}`);
+            if (el) el.value = places[idx];
+        });
+    });
+}
 
-        function fillRandomQualification(roundIdx) {
-            const path = tournament.qualificationPath;
-            let activeCouples = tournament.couples.filter(c => c.active);
+function clearSemi() {
+    const active = T.couples.filter(c => c.active);
+    active.forEach(c => {
+        T.judges.forEach(j => {
+            const el = $(`s-${c.id}-${j.id}`);
+            if (el) el.value = '';
+        });
+    });
+}
 
-            if (roundIdx > 0) {
-                const prevRound = tournament.qualificationRounds[roundIdx - 1];
-                if (prevRound) {
-                    activeCouples = activeCouples.filter(c => 
-                        prevRound.results.find(r => r.coupleId === c.id)?.qualified
-                    );
-                }
+function calculateSemifinal() {
+    const active = T.couples.filter(c => c.active);
+    const majority = getMajority(T.numJudges);
+
+    let marks = [];
+    active.forEach(c => {
+        let cm = [];
+        T.judges.forEach(j => {
+            const v = parseInt($(`s-${c.id}-${j.id}`).value);
+            if (v && v >= 1 && v <= active.length) cm.push(v);
+        });
+        marks.push({ coupleId: c.id, coupleNumber: c.number, marks: cm.sort((a,b) => a-b) });
+    });
+
+    const results = skatingDance(marks, majority, active.length);
+
+    // Сохраняем
+    T.semifinalData = { results: results, marks: marks };
+
+    // Отображаем результаты
+    results.forEach(r => {
+        const cell = $(`s-res-${r.coupleId}`);
+        if (cell) {
+            cell.textContent = r.place;
+            cell.className = 'final-place';
+            if (r.place === 1) cell.classList.add('place-1');
+            else if (r.place === 2) cell.classList.add('place-2');
+            else if (r.place === 3) cell.classList.add('place-3');
+        }
+    });
+
+    // Отбираем в финал
+    const finalists = results.filter(r => r.place <= T.maxFinalists);
+    T.couples.forEach(c => {
+        if (!finalists.find(f => f.coupleId === c.id)) c.active = false;
+    });
+
+    // Добавляем протокол
+    const content = $('semifinalContent');
+    content.innerHTML += buildSkatingProtocol(results, marks, T.numJudges, 'Протокол полуфинала (Правила 5-8)');
+
+    setTimeout(() => { hide('step3'); show('step4'); initFinal(); }, 1500);
+}
+
+// ==================== ФИНАЛ ====================
+function initFinal() {
+    const info = $('finalInfo');
+    const finalists = T.couples.filter(c => c.active);
+
+    info.innerHTML = `<div class="success-box">Финал: ${finalists.length} пар, ${T.numDances} танцев.</div>`;
+
+    const tabs = $('finalTabs');
+    tabs.innerHTML = '';
+    T.dances.forEach((d, idx) => {
+        const tab = document.createElement('button');
+        tab.className = 'tab' + (idx === 0 ? ' active' : '');
+        tab.textContent = d.name;
+        tab.onclick = () => switchFinalDance(idx);
+        tabs.appendChild(tab);
+    });
+
+    T.currentFinalDance = 0;
+    renderFinalDance(0);
+}
+
+function switchFinalDance(idx) {
+    // Сохраняем текущие данные перед переключением
+    saveCurrentFinalDanceData();
+
+    T.currentFinalDance = idx;
+    document.querySelectorAll('#finalTabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+    });
+    renderFinalDance(idx);
+}
+
+function saveCurrentFinalDanceData() {
+    const idx = T.currentFinalDance;
+    const finalists = T.couples.filter(c => c.active);
+
+    if (!T.finalData) T.finalData = { marks: [], results: [] };
+
+    let marks = [];
+    finalists.forEach(c => {
+        let cm = [];
+        T.judges.forEach(j => {
+            const el = $(`f-${idx}-${c.id}-${j.id}`);
+            const v = el ? parseInt(el.value) : NaN;
+            if (v && v >= 1 && v <= finalists.length) cm.push(v);
+        });
+        marks.push({ coupleId: c.id, coupleNumber: c.number, marks: cm.sort((a,b) => a-b) });
+    });
+
+    T.finalData.marks[idx] = marks;
+
+    // Если есть результаты - сохраняем
+    if (T.finalData.results[idx]) {
+        // Результаты уже есть
+    }
+}
+
+function renderFinalDance(idx) {
+    const finalists = T.couples.filter(c => c.active);
+    const dance = T.dances[idx];
+    const buttons = $('finalButtons');
+    const content = $('finalContent');
+
+    buttons.innerHTML = `
+        <button class="btn btn-secondary" onclick="fillRandomFinal(${idx})">🎲 Заполнить случайно</button>
+        <button class="btn btn-secondary" onclick="clearFinal(${idx})">❌ Очистить</button>
+    `;
+
+    // Получаем сохранённые данные
+    const savedMarks = T.finalData && T.finalData.marks[idx] ? T.finalData.marks[idx] : null;
+    const savedResults = T.finalData && T.finalData.results[idx] ? T.finalData.results[idx] : null;
+
+    let html = `<h3>${dance.name}</h3>`;
+    html += `<div class="table-container"><table><thead><tr><th>Пара</th>`;
+    T.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
+    html += `<th>Результат</th></tr></thead><tbody>`;
+
+    finalists.forEach(c => {
+        html += `<tr><td><strong>Пара №${c.number}</strong></td>`;
+        T.judges.forEach(j => {
+            let val = '';
+            if (savedMarks) {
+                const cm = savedMarks.find(m => m.coupleId === c.id);
+                if (cm && cm.marks[j.id - 1]) val = cm.marks[j.id - 1];
             }
+            html += `<td><input type="number" class="score-input" id="f-${idx}-${c.id}-${j.id}" min="1" max="${finalists.length}" value="${val}" placeholder="-"></td>`;
+        });
 
-            activeCouples.forEach(couple => {
-                tournament.judges.forEach(judge => {
-                    const select = $(`qual-${roundIdx}-${couple.id}-${judge.id}`);
-                    if (select) {
-                        // Случайно 0 или 1, с небольшим преимуществом к 1 (60%)
-                        select.value = Math.random() < 0.6 ? '1' : '0';
-                    }
-                });
-                updateQualTotal(roundIdx, couple.id);
-            });
-        }
-
-        function clearQualification(roundIdx) {
-            const path = tournament.qualificationPath;
-            let activeCouples = tournament.couples.filter(c => c.active);
-
-            if (roundIdx > 0) {
-                const prevRound = tournament.qualificationRounds[roundIdx - 1];
-                if (prevRound) {
-                    activeCouples = activeCouples.filter(c => 
-                        prevRound.results.find(r => r.coupleId === c.id)?.qualified
-                    );
-                }
+        let resText = '-';
+        let resClass = 'final-place';
+        if (savedResults) {
+            const res = savedResults.find(r => r.coupleId === c.id);
+            if (res) {
+                resText = res.place;
+                if (res.place === 1) resClass = 'final-place place-1';
+                else if (res.place === 2) resClass = 'final-place place-2';
+                else if (res.place === 3) resClass = 'final-place place-3';
             }
+        }
+        html += `<td id="f-res-${idx}-${c.id}" class="${resClass}">${resText}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
 
-            activeCouples.forEach(couple => {
-                tournament.judges.forEach(judge => {
-                    const select = $(`qual-${roundIdx}-${couple.id}-${judge.id}`);
-                    if (select) {
-                        select.value = '0';
-                    }
+    if (savedResults && savedMarks) {
+        html += buildSkatingProtocol(savedResults, savedMarks, T.numJudges, `Протокол: ${dance.name}`);
+    }
+
+    content.innerHTML = html;
+}
+
+function fillRandomFinal(idx) {
+    const finalists = T.couples.filter(c => c.active);
+    const n = finalists.length;
+    T.judges.forEach(j => {
+        let places = [];
+        for (let i = 1; i <= n; i++) places.push(i);
+        for (let i = places.length - 1; i > 0; i--) {
+            const r = Math.floor(Math.random() * (i + 1));
+            [places[i], places[r]] = [places[r], places[i]];
+        }
+        finalists.forEach((c, i) => {
+            const el = $(`f-${idx}-${c.id}-${j.id}`);
+            if (el) el.value = places[i];
+        });
+    });
+}
+
+function clearFinal(idx) {
+    const finalists = T.couples.filter(c => c.active);
+    finalists.forEach(c => {
+        T.judges.forEach(j => {
+            const el = $(`f-${idx}-${c.id}-${j.id}`);
+            if (el) el.value = '';
+        });
+    });
+}
+
+function calculateFinal() {
+    // Сохраняем текущий танец
+    saveCurrentFinalDanceData();
+
+    const finalists = T.couples.filter(c => c.active);
+    const majority = getMajority(T.numJudges);
+
+    if (!T.finalData) T.finalData = { marks: [], results: [] };
+
+    // Собираем данные по всем танцам
+    T.dances.forEach((dance, idx) => {
+        let marks = T.finalData.marks[idx];
+        if (!marks) {
+            marks = [];
+            finalists.forEach(c => {
+                let cm = [];
+                T.judges.forEach(j => {
+                    const el = $(`f-${idx}-${c.id}-${j.id}`);
+                    const v = el ? parseInt(el.value) : NaN;
+                    if (v && v >= 1 && v <= finalists.length) cm.push(v);
                 });
-                updateQualTotal(roundIdx, couple.id);
+                marks.push({ coupleId: c.id, coupleNumber: c.number, marks: cm.sort((a,b) => a-b) });
             });
+            T.finalData.marks[idx] = marks;
         }
 
-        function fillRandomSemifinal() {
-            const qualified = tournament.couples.filter(c => c.active);
-            const numPlaces = qualified.length;
+        const results = skatingDance(marks, majority, finalists.length);
+        T.finalData.results[idx] = results;
+    });
 
-            qualified.forEach(couple => {
-                // Генерируем случайную перестановку мест для каждого судьи
-                tournament.judges.forEach(judge => {
-                    const input = $(`semi-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = '';
-                    }
-                });
-            });
+    // Пересчитываем итоговые места
+    T.finalStandings = calculateFinalStandings(T.finalData.results, finalists);
 
-            // Для каждого судьи создаём случайную перестановку мест
-            tournament.judges.forEach(judge => {
-                let places = [];
-                for (let i = 1; i <= numPlaces; i++) places.push(i);
-                // Перемешиваем (Fisher-Yates)
-                for (let i = places.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [places[i], places[j]] = [places[j], places[i]];
-                }
+    // Показываем результаты текущего танца
+    renderFinalDance(T.currentFinalDance);
 
-                qualified.forEach((couple, idx) => {
-                    const input = $(`semi-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = places[idx];
-                    }
-                });
-            });
-        }
+    // Добавляем кнопку перехода
+    const content = $('finalContent');
+    content.innerHTML += `<div class="no-print" style="margin-top:20px;text-align:center;">
+        <button class="btn btn-primary" onclick="goToResults()">Показать итоговые результаты →</button>
+    </div>`;
+}
 
-        function clearSemifinal() {
-            const qualified = tournament.couples.filter(c => c.active);
-            qualified.forEach(couple => {
-                tournament.judges.forEach(judge => {
-                    const input = $(`semi-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = '';
-                    }
-                });
-            });
-        }
+function goToResults() {
+    hide('step4');
+    show('step5');
+    showFinalResults();
+}
 
-        function fillRandomFinal(danceIdx) {
-            const finalists = tournament.couples.filter(c => c.active);
-            const numPlaces = finalists.length;
+// ==================== СКЕЙТИНГ-АЛГОРИТМ (Правила 5-8) ====================
+function skatingDance(marks, majority, numCouples) {
+    let results = [];
+    let placed = new Set();
+    let currentPlace = 1;
 
-            // Очищаем сначала
-            finalists.forEach(couple => {
-                tournament.judges.forEach(judge => {
-                    const input = $(`final-${danceIdx}-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = '';
-                    }
-                });
-            });
+    while (currentPlace <= numCouples) {
+        let candidates = [];
 
-            // Для каждого судьи создаём случайную перестановку мест
-            tournament.judges.forEach(judge => {
-                let places = [];
-                for (let i = 1; i <= numPlaces; i++) places.push(i);
-                // Перемешиваем (Fisher-Yates)
-                for (let i = places.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [places[i], places[j]] = [places[j], places[i]];
-                }
+        for (const couple of marks) {
+            if (placed.has(couple.coupleId)) continue;
 
-                finalists.forEach((couple, idx) => {
-                    const input = $(`final-${danceIdx}-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = places[idx];
-                    }
-                });
-            });
-        }
-
-        function clearFinal(danceIdx) {
-            const finalists = tournament.couples.filter(c => c.active);
-            finalists.forEach(couple => {
-                tournament.judges.forEach(judge => {
-                    const input = $(`final-${danceIdx}-${couple.id}-${judge.id}`);
-                    if (input) {
-                        input.value = '';
-                    }
-                });
-            });
-        }
-
-        // ==================== ПОЛУФИНАЛ ====================
-        function initSemifinal() {
-            const info = $('semifinalInfo');
-            const qualified = tournament.couples.filter(c => c.active);
-
-            info.innerHTML = `<div class="success-box">Полуфинал: ${qualified.length} пар. 
-                             Судьи расставляют места от 1 до ${qualified.length} (без повторений).</div>`;
-
-            const content = $('semifinalContent');
-
-            let html = `<div class="table-container"><table><thead><tr><th>Пара</th>`;
-            tournament.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
-            html += `<th>Результат</th></tr></thead><tbody>`;
-
-            qualified.forEach(couple => {
-                html += `<tr><td><strong>Пара №${couple.number}</strong></td>`;
-                tournament.judges.forEach(judge => {
-                    html += `<td>
-                        <input type="number" class="score-input" 
-                               id="semi-${couple.id}-${judge.id}"
-                               min="1" max="${qualified.length}" value=""
-                               placeholder="-">
-                    </td>`;
-                });
-                html += `<td id="semi-result-${couple.id}" class="final-place">-</td></tr>`;
-            });
-
-            html += `</tbody></table></div>`;
-            content.innerHTML = html;
-        }
-
-        function calculateSemifinal() {
-            const qualified = tournament.couples.filter(c => c.active);
-            const numJudges = tournament.numJudges;
-            const majority = getMajority(numJudges);
-
-            // Собираем оценки
-            let marks = [];
-            qualified.forEach(couple => {
-                let coupleMarks = [];
-                tournament.judges.forEach(judge => {
-                    const val = parseInt($(`semi-${couple.id}-${judge.id}`).value);
-                    if (val && val >= 1 && val <= qualified.length) {
-                        coupleMarks.push(val);
-                    }
-                });
-                marks.push({
-                    coupleId: couple.id,
-                    coupleNumber: couple.number,
-                    marks: coupleMarks.sort((a, b) => a - b)
-                });
-            });
-
-            // Применяем скейтинг-правила 5-8 для одного танца
-            const results = calculateSkatingDance(marks, majority, numJudges);
-            tournament.semifinalResults = results;
-
-            // Отображаем результаты
-            results.forEach(r => {
-                const cell = $(`semi-result-${r.coupleId}`);
-                if (cell) {
-                    cell.textContent = r.place;
-                    if (r.place === 1) cell.className = 'final-place place-1';
-                    else if (r.place === 2) cell.className = 'final-place place-2';
-                    else if (r.place === 3) cell.className = 'final-place place-3';
-                }
-            });
-
-            // Отбираем в финал (maxFinalists)
-            const finalists = results.filter(r => r.place <= tournament.maxFinalists);
-            tournament.couples.forEach(c => {
-                if (!finalists.find(f => f.coupleId === c.id)) {
-                    c.active = false;
-                }
-            });
-
-            // Показываем протокол
-            showSemifinalProtocol(results, marks);
-
-            setTimeout(() => {
-                hide('step3');
-                show('step4');
-                initFinal();
-            }, 1500);
-        }
-
-        function showSemifinalProtocol(results, marks) {
-            const content = $('semifinalContent');
-            let html = content.innerHTML;
-
-            html += `<div class="results-panel"><h3>Протокол полуфинала (Правила 5-8)</h3>`;
-            html += `<div class="table-container"><table class="protocol-table"><thead><tr><th>Пара</th>`;
-
-            // Колонки 1-2, 1-3, ...
-            const maxPlace = Math.max(...results.map(r => Math.floor(r.place)));
-            for (let i = 1; i <= maxPlace; i++) {
-                html += `<th>1-${i}</th>`;
-            }
-            html += `<th>Итог</th></tr></thead><tbody>`;
-
-            results.forEach(r => {
-                const couple = marks.find(m => m.coupleId === r.coupleId);
-                html += `<tr><td>Пара №${r.coupleNumber}</td>`;
-
-                for (let col = 1; col <= maxPlace; col++) {
-                    const count = couple.marks.filter(m => m <= col).length;
+            for (let col = 1; col <= numCouples; col++) {
+                const count = couple.marks.filter(m => m <= col).length;
+                if (count >= majority) {
                     const sum = couple.marks.filter(m => m <= col).reduce((a, b) => a + b, 0);
-
-                    let cellClass = '';
-                    let cellContent = `${count}`;
-
-                    if (count >= getMajority(tournament.numJudges)) {
-                        cellClass = 'majority-cell';
-                        cellContent = `${count}<br><small>(${sum})</small>`;
-                    }
-
-                    html += `<td class="${cellClass}">${cellContent}</td>`;
-                }
-
-                html += `<td class="final-place"><strong>${r.place}</strong></td></tr>`;
-            });
-
-            html += `</tbody></table></div></div>`;
-            content.innerHTML = html;
-        }
-
-        // ==================== ФИНАЛ ====================
-        function initFinal() {
-            const finalists = tournament.couples.filter(c => c.active);
-            const info = $('finalInfo');
-
-            info.innerHTML = `<div class="success-box">Финал: ${finalists.length} пар, ${tournament.numDances} танцев. 
-                             Судьи расставляют места от 1 до ${finalists.length}.</div>`;
-
-            // Табы для танцев
-            const tabsContainer = $('finalTabs');
-            tabsContainer.innerHTML = '';
-
-            tournament.dances.forEach((dance, idx) => {
-                const tab = document.createElement('button');
-                tab.className = 'tab' + (idx === 0 ? ' active' : '');
-                tab.textContent = dance.name;
-                tab.onclick = () => switchFinalDance(idx);
-                tabsContainer.appendChild(tab);
-            });
-
-            tournament.currentFinalDance = 0;
-            renderFinalDance(0);
-        }
-
-        function switchFinalDance(danceIdx) {
-            tournament.currentFinalDance = danceIdx;
-            document.querySelectorAll('#finalTabs .tab').forEach((t, i) => {
-                t.classList.toggle('active', i === danceIdx);
-            });
-            renderFinalDance(danceIdx);
-        }
-
-        function renderFinalDance(danceIdx) {
-            const finalists = tournament.couples.filter(c => c.active);
-            const dance = tournament.dances[danceIdx];
-            const content = $('finalContent');
-
-            let html = `<h3>${dance.name}</h3>`;
-            html += `<div class="no-print" style="margin-bottom: 15px;">
-                <button class="btn btn-secondary" onclick="fillRandomQualification(${roundIdx})">
-                    🎲 Заполнить случайно
-                </button>
-                <button class="btn btn-secondary" onclick="clearQualification(${roundIdx})">
-                    ❌ Очистить
-                </button>
-            </div>`;
-            html += `<div class="no-print" style="margin-bottom: 15px;">
-                <button class="btn btn-secondary" onclick="fillRandomSemifinal()">
-                    🎲 Заполнить случайно
-                </button>
-                <button class="btn btn-secondary" onclick="clearSemifinal()">
-                    ❌ Очистить
-                </button>
-            </div>`;
-            html += `<div class="table-container"><table><thead><tr><th>Пара</th>`;
-            tournament.judges.forEach(j => html += `<th>Судья ${j.name}</th>`);
-            html += `<th>Результат</th></tr></thead><tbody>`;
-
-            finalists.forEach(couple => {
-                html += `<tr><td><strong>Пара №${couple.number}</strong></td>`;
-                tournament.judges.forEach(judge => {
-                    html += `<td>
-                        <input type="number" class="score-input" 
-                               id="final-${danceIdx}-${couple.id}-${judge.id}"
-                               min="1" max="${finalists.length}" value=""
-                               placeholder="-">
-                    </td>`;
-                });
-                html += `<td id="final-result-${danceIdx}-${couple.id}" class="final-place">-</td></tr>`;
-            });
-
-            html += `</tbody></table></div>`;
-
-            // Если есть результаты этого танца, показываем протокол
-            if (tournament.finalResults && tournament.finalResults.danceResults && 
-                tournament.finalResults.danceResults[danceIdx]) {
-                html += showDanceProtocol(danceIdx, finalists.length);
-            }
-
-            content.innerHTML = html;
-        }
-
-        function showDanceProtocol(danceIdx, numFinalists) {
-            const results = tournament.finalResults.danceResults[danceIdx];
-            const marks = tournament.finalResults.danceMarks[danceIdx];
-            const majority = getMajority(tournament.numJudges);
-
-            let html = `<div class="results-panel"><h3>Протокол: ${tournament.dances[danceIdx].name} (Правила 5-8)</h3>`;
-            html += `<div class="table-container"><table class="protocol-table"><thead><tr><th>Пара</th>`;
-
-            for (let i = 1; i <= numFinalists; i++) {
-                html += `<th>1-${i}</th>`;
-            }
-            html += `<th>Итог</th></tr></thead><tbody>`;
-
-            results.forEach(r => {
-                const couple = marks.find(m => m.coupleId === r.coupleId);
-                html += `<tr><td>Пара №${r.coupleNumber}</td>`;
-
-                for (let col = 1; col <= numFinalists; col++) {
-                    const count = couple.marks.filter(m => m <= col).length;
-                    const sum = couple.marks.filter(m => m <= col).reduce((a, b) => a + b, 0);
-
-                    let cellClass = '';
-                    let cellContent = `${count}`;
-
-                    if (count >= majority) {
-                        cellClass = 'majority-cell';
-                        if (r.ruleApplied && r.ruleApplied.includes(`col${col}`)) {
-                            cellContent = `${count}<br><small>(${sum})</small>`;
-                        }
-                    }
-
-                    html += `<td class="${cellClass}">${cellContent}</td>`;
-                }
-
-                html += `<td class="final-place"><strong>${r.place}</strong></td></tr>`;
-            });
-
-            html += `</tbody></table></div></div>`;
-            return html;
-        }
-
-        function calculateFinal() {
-            const finalists = tournament.couples.filter(c => c.active);
-            const numJudges = tournament.numJudges;
-            const majority = getMajority(numJudges);
-
-            let danceResults = [];
-            let danceMarks = [];
-
-            // Считаем каждый танец
-            tournament.dances.forEach((dance, danceIdx) => {
-                let marks = [];
-                finalists.forEach(couple => {
-                    let coupleMarks = [];
-                    tournament.judges.forEach(judge => {
-                        const val = parseInt($(`final-${danceIdx}-${couple.id}-${judge.id}`).value);
-                        if (val && val >= 1 && val <= finalists.length) {
-                            coupleMarks.push(val);
-                        }
-                    });
-                    marks.push({
-                        coupleId: couple.id,
-                        coupleNumber: couple.number,
-                        marks: coupleMarks.sort((a, b) => a - b)
-                    });
-                });
-
-                const results = calculateSkatingDance(marks, majority, numJudges);
-                danceResults.push(results);
-                danceMarks.push(marks);
-
-                // Обновляем отображение для этого танца
-                results.forEach(r => {
-                    const cell = $(`final-result-${danceIdx}-${r.coupleId}`);
-                    if (cell) {
-                        cell.textContent = r.place;
-                        if (r.place === 1) cell.className = 'final-place place-1';
-                        else if (r.place === 2) cell.className = 'final-place place-2';
-                        else if (r.place === 3) cell.className = 'final-place place-3';
-                    }
-                });
-            });
-
-            // Сохраняем
-            tournament.finalResults = {
-                danceResults: danceResults,
-                danceMarks: danceMarks
-            };
-
-            // Пересчитываем итоговые места (Правила 9-11)
-            const finalStandings = calculateFinalStandings(danceResults, finalists);
-            tournament.finalStandings = finalStandings;
-
-            // Показываем протокол текущего танца
-            renderFinalDance(tournament.currentFinalDance);
-
-            // Переходим к итогам
-            setTimeout(() => {
-                hide('step4');
-                show('step5');
-                showFinalResults();
-            }, 1000);
-        }
-
-        // ==================== СКЕЙТИНГ-ЛОГИКА (Правила 5-8) ====================
-        function calculateSkatingDance(marks, majority, numJudges) {
-            let results = [];
-            let placed = new Set();
-            let currentPlace = 1;
-
-            const numCouples = marks.length;
-
-            // Для каждого места от 1 до numCouples
-            while (currentPlace <= numCouples) {
-                let candidates = [];
-
-                // Ищем кандидатов, не имеющих место
-                marks.forEach(couple => {
-                    if (placed.has(couple.coupleId)) return;
-
-                    // Проверяем колонки 1-1, 1-2, 1-3, ...
-                    for (let col = 1; col <= numCouples; col++) {
-                        const count = couple.marks.filter(m => m <= col).length;
-
-                        if (count >= majority) {
-                            const sum = couple.marks.filter(m => m <= col).reduce((a, b) => a + b, 0);
-                            candidates.push({
-                                coupleId: couple.coupleId,
-                                coupleNumber: couple.coupleNumber,
-                                marks: couple.marks,
-                                col: col,
-                                count: count,
-                                sum: sum
-                            });
-                            break;
-                        }
-                    }
-                });
-
-                if (candidates.length === 0) {
-                    // Ни у кого нет большинства — берём оставшихся по сумме всех оценок
-                    let remaining = marks.filter(c => !placed.has(c.coupleId));
-                    remaining.sort((a, b) => {
-                        const sumA = a.marks.reduce((x, y) => x + y, 0);
-                        const sumB = b.marks.reduce((x, y) => x + y, 0);
-                        return sumA - sumB;
-                    });
-
-                    remaining.forEach(c => {
-                        results.push({
-                            coupleId: c.coupleId,
-                            coupleNumber: c.coupleNumber,
-                            place: currentPlace,
-                            ruleApplied: 'no-majority'
-                        });
-                        placed.add(c.coupleId);
-                        currentPlace++;
+                    candidates.push({
+                        coupleId: couple.coupleId,
+                        coupleNumber: couple.coupleNumber,
+                        col: col,
+                        count: count,
+                        sum: sum,
+                        marks: couple.marks
                     });
                     break;
                 }
-
-                // Сортируем кандидатов
-                candidates.sort((a, b) => {
-                    // Сначала по колонке (меньше = лучше)
-                    if (a.col !== b.col) return a.col - b.col;
-                    // Потом по количеству (больше = лучше)
-                    if (a.count !== b.count) return b.count - a.count;
-                    // Потом по сумме (меньше = лучше)
-                    return a.sum - b.sum;
-                });
-
-                // Проверяем на равенство (Правило 7-8)
-                let tied = [];
-                let first = candidates[0];
-                tied.push(first);
-
-                for (let i = 1; i < candidates.length; i++) {
-                    if (candidates[i].col === first.col && 
-                        candidates[i].count === first.count && 
-                        candidates[i].sum === first.sum) {
-                        tied.push(candidates[i]);
-                    } else {
-                        break;
-                    }
-                }
-
-                if (tied.length === 1) {
-                    // Нет равенства — присваиваем место
-                    results.push({
-                        coupleId: first.coupleId,
-                        coupleNumber: first.coupleNumber,
-                        place: currentPlace,
-                        ruleApplied: `col${first.col}`
-                    });
-                    placed.add(first.coupleId);
-                    currentPlace++;
-                } else {
-                    // Равенство — пробуем разрешить по следующим колонкам (Правило 7б)
-                    let resolved = resolveTie(tied, marks, majority, numCouples, placed);
-
-                    if (resolved.resolved) {
-                        resolved.results.forEach(r => {
-                            results.push({
-                                coupleId: r.coupleId,
-                                coupleNumber: r.coupleNumber,
-                                place: currentPlace,
-                                ruleApplied: r.ruleApplied
-                            });
-                            placed.add(r.coupleId);
-                            currentPlace++;
-                        });
-                    } else {
-                        // Не разрешилось — среднее арифметическое (Правило 8)
-                        let avgPlace = currentPlace + (tied.length - 1) / 2;
-                        tied.forEach(t => {
-                            results.push({
-                                coupleId: t.coupleId,
-                                coupleNumber: t.coupleNumber,
-                                place: avgPlace,
-                                ruleApplied: 'average'
-                            });
-                            placed.add(t.coupleId);
-                        });
-                        currentPlace += tied.length;
-                    }
-                }
             }
-
-            return results;
         }
 
-        function resolveTie(tiedCouples, allMarks, majority, maxCol, placed) {
-            // Пробуем следующие колонки для разрешения спора
-            let startCol = tiedCouples[0].col + 1;
+        if (candidates.length === 0) {
+            let remaining = marks.filter(c => !placed.has(c.coupleId));
+            remaining.sort((a, b) => {
+                const sumA = a.marks.reduce((x, y) => x + y, 0);
+                const sumB = b.marks.reduce((x, y) => x + y, 0);
+                return sumA - sumB;
+            });
+            for (const c of remaining) {
+                results.push({ coupleId: c.coupleId, coupleNumber: c.coupleNumber, place: currentPlace });
+                placed.add(c.coupleId);
+                currentPlace++;
+            }
+            break;
+        }
 
-            for (let col = startCol; col <= maxCol; col++) {
+        candidates.sort((a, b) => {
+            if (a.col !== b.col) return a.col - b.col;
+            if (a.count !== b.count) return b.count - a.count;
+            return a.sum - b.sum;
+        });
+
+        let tied = [candidates[0]];
+        for (let i = 1; i < candidates.length; i++) {
+            if (candidates[i].col === candidates[0].col && 
+                candidates[i].count === candidates[0].count && 
+                candidates[i].sum === candidates[0].sum) {
+                tied.push(candidates[i]);
+            } else break;
+        }
+
+        if (tied.length === 1) {
+            results.push({ coupleId: tied[0].coupleId, coupleNumber: tied[0].coupleNumber, place: currentPlace });
+            placed.add(tied[0].coupleId);
+            currentPlace++;
+        } else {
+            let resolved = false;
+            const startCol = tied[0].col + 1;
+            for (let col = startCol; col <= numCouples; col++) {
                 let newCandidates = [];
-
-                tiedCouples.forEach(tc => {
-                    const couple = allMarks.find(m => m.coupleId === tc.coupleId);
+                for (const t of tied) {
+                    const couple = marks.find(m => m.coupleId === t.coupleId);
                     const count = couple.marks.filter(m => m <= col).length;
                     const sum = couple.marks.filter(m => m <= col).reduce((a, b) => a + b, 0);
-
-                    newCandidates.push({
-                        coupleId: tc.coupleId,
-                        coupleNumber: tc.coupleNumber,
-                        marks: couple.marks,
-                        col: col,
-                        count: count,
-                        sum: sum
-                    });
-                });
-
-                // Сортируем
+                    newCandidates.push({ coupleId: t.coupleId, coupleNumber: t.coupleNumber, count, sum });
+                }
                 newCandidates.sort((a, b) => {
                     if (a.count !== b.count) return b.count - a.count;
                     return a.sum - b.sum;
                 });
 
-                // Проверяем, есть ли различия
                 let allSame = true;
                 for (let i = 1; i < newCandidates.length; i++) {
                     if (newCandidates[i].count !== newCandidates[0].count ||
                         newCandidates[i].sum !== newCandidates[0].sum) {
-                        allSame = false;
-                        break;
+                        allSame = false; break;
                     }
                 }
 
                 if (!allSame) {
-                    // Есть различия — сортируем и возвращаем
-                    return {
-                        resolved: true,
-                        results: newCandidates.map((nc, idx) => ({
-                            coupleId: nc.coupleId,
-                            coupleNumber: nc.coupleNumber,
-                            ruleApplied: `col${col}`
-                        }))
-                    };
+                    for (const nc of newCandidates) {
+                        results.push({ coupleId: nc.coupleId, coupleNumber: nc.coupleNumber, place: currentPlace });
+                        placed.add(nc.coupleId);
+                        currentPlace++;
+                    }
+                    resolved = true;
+                    break;
                 }
             }
 
-            return { resolved: false };
-        }
-
-        // ==================== ИТОГОВЫЕ МЕСТА (Правила 9-11) ====================
-        function calculateFinalStandings(danceResults, finalists) {
-            // Собираем суммы мест по танцам для каждой пары
-            let standings = [];
-
-            finalists.forEach(couple => {
-                let sum = 0;
-                let places = [];
-
-                danceResults.forEach(danceRes => {
-                    const res = danceRes.find(r => r.coupleId === couple.id);
-                    if (res) {
-                        sum += res.place;
-                        places.push(res.place);
-                    }
-                });
-
-                standings.push({
-                    coupleId: couple.id,
-                    coupleNumber: couple.number,
-                    sum: sum,
-                    places: places
-                });
-            });
-
-            // Сортируем по сумме (меньше = лучше)
-            standings.sort((a, b) => a.sum - b.sum);
-
-            // Разрешаем споры (Правило 10)
-            let finalPlaces = [];
-            let currentPlace = 1;
-            let i = 0;
-
-            while (i < standings.length) {
-                let tied = [standings[i]];
-
-                // Ищем всех с одинаковой суммой
-                for (let j = i + 1; j < standings.length; j++) {
-                    if (standings[j].sum === standings[i].sum) {
-                        tied.push(standings[j]);
-                    } else {
-                        break;
-                    }
+            if (!resolved) {
+                const avg = currentPlace + (tied.length - 1) / 2;
+                for (const t of tied) {
+                    results.push({ coupleId: t.coupleId, coupleNumber: t.coupleNumber, place: avg });
+                    placed.add(t.coupleId);
                 }
-
-                if (tied.length === 1) {
-                    finalPlaces.push({
-                        ...tied[0],
-                        finalPlace: currentPlace,
-                        rule10: false
-                    });
-                    currentPlace++;
-                } else {
-                    // Применяем Правило 10
-                    let resolved = resolveRule10(tied, currentPlace);
-                    finalPlaces.push(...resolved);
-                    currentPlace += tied.length;
-                }
-
-                i += tied.length;
+                currentPlace += tied.length;
             }
-
-            return finalPlaces;
         }
+    }
 
-        function resolveRule10(tied, startPlace) {
-            // Правило 10: коэффициент эффективности
-            let maxPlace = Math.max(...tied.map(t => Math.max(...t.places.map(p => Math.ceil(p)))));
+    return results;
+}
 
-            for (let placeThreshold = 1; placeThreshold <= maxPlace; placeThreshold++) {
-                let effCoefficients = tied.map(t => {
-                    // Считаем количество результатов <= placeThreshold (с округлением вверх для половинок)
-                    let count = t.places.filter(p => {
-                        let rounded = Math.ceil(p);
-                        return rounded <= placeThreshold;
-                    }).length;
+function buildSkatingProtocol(results, marks, numJudges, title) {
+    const majority = getMajority(numJudges);
+    const maxPlace = Math.max(...results.map(r => Math.floor(r.place)));
 
-                    // Сумма составляющих (без округления)
-                    let sum = t.places.filter(p => p <= placeThreshold).reduce((a, b) => a + b, 0);
+    let html = `<div class="results-panel"><h3>${title}</h3>`;
+    html += `<div class="table-container"><table class="protocol-table"><thead><tr><th>Пара</th>`;
+    for (let i = 1; i <= maxPlace; i++) html += `<th>1-${i}</th>`;
+    html += `<th>Итог</th></tr></thead><tbody>`;
 
-                    return {
-                        ...t,
-                        effCount: count,
-                        effSum: sum,
-                        threshold: placeThreshold
-                    };
-                });
-
-                // Сортируем по коэффициенту эффективности
-                effCoefficients.sort((a, b) => {
-                    if (a.effCount !== b.effCount) return b.effCount - a.effCount;
-                    return a.effSum - b.effSum;
-                });
-
-                // Проверяем, есть ли различия
-                let allSame = true;
-                for (let i = 1; i < effCoefficients.length; i++) {
-                    if (effCoefficients[i].effCount !== effCoefficients[0].effCount ||
-                        effCoefficients[i].effSum !== effCoefficients[0].effSum) {
-                        allSame = false;
-                        break;
-                    }
-                }
-
-                if (!allSame) {
-                    return effCoefficients.map((ec, idx) => ({
-                        ...ec,
-                        finalPlace: startPlace + idx,
-                        rule10: true,
-                        rule10Details: `КЭ по 1-${placeThreshold}: ${ec.effCount} (сумма ${ec.effSum})`
-                    }));
-                }
+    for (const r of results) {
+        const couple = marks.find(m => m.coupleId === r.coupleId);
+        html += `<tr><td>Пара №${r.coupleNumber}</td>`;
+        for (let col = 1; col <= maxPlace; col++) {
+            const count = couple.marks.filter(m => m <= col).length;
+            const sum = couple.marks.filter(m => m <= col).reduce((a, b) => a + b, 0);
+            let cellClass = '';
+            let cellContent = `${count}`;
+            if (count >= majority) {
+                cellClass = 'majority-cell';
+                cellContent = `${count}<br><small>(${sum})</small>`;
             }
+            html += `<td class="${cellClass}">${cellContent}</td>`;
+        }
+        html += `<td class="final-place"><strong>${r.place}</strong></td></tr>`;
+    }
+    html += `</tbody></table></div></div>`;
+    return html;
+}
 
-            // Если всё равно — Правило 11 (большой скейтинг)
-            return resolveRule11(tied, startPlace);
+// ==================== ИТОГОВЫЕ МЕСТА (Правила 9-11) ====================
+function calculateFinalStandings(danceResults, finalists) {
+    let standings = [];
+
+    for (const couple of finalists) {
+        let sum = 0;
+        let places = [];
+        for (const danceRes of danceResults) {
+            const res = danceRes.find(r => r.coupleId === couple.id);
+            if (res) {
+                sum += res.place;
+                places.push(res.place);
+            }
+        }
+        standings.push({ coupleId: couple.id, coupleNumber: couple.number, sum, places });
+    }
+
+    standings.sort((a, b) => a.sum - b.sum);
+
+    let finalPlaces = [];
+    let currentPlace = 1;
+    let i = 0;
+
+    while (i < standings.length) {
+        let tied = [standings[i]];
+        for (let j = i + 1; j < standings.length; j++) {
+            if (standings[j].sum === standings[i].sum) tied.push(standings[j]);
+            else break;
         }
 
-        function resolveRule11(tied, startPlace) {
-            // Правило 11: объединяем все оценки всех судей по всем танцам
-            // Применяем скейтинг с majority = floor(judges * dances / 2) + 1
-            const bigMajority = Math.floor(tournament.numJudges * tournament.numDances / 2) + 1;
+        if (tied.length === 1) {
+            finalPlaces.push({ ...tied[0], finalPlace: currentPlace, rule10: false });
+            currentPlace++;
+        } else {
+            const resolved = resolveRule10(tied, currentPlace);
+            finalPlaces.push(...resolved);
+            currentPlace += tied.length;
+        }
+        i += tied.length;
+    }
 
-            // Здесь упрощённая версия — если не разрешилось по правилу 10,
-            // присваиваем среднее арифметическое (как в Правиле 8)
-            let avgPlace = startPlace + (tied.length - 1) / 2;
+    return finalPlaces;
+}
 
-            return tied.map(t => ({
-                ...t,
-                finalPlace: avgPlace,
-                rule10: true,
-                rule11: true,
-                rule10Details: 'Правило 11: среднее арифметическое'
+function resolveRule10(tied, startPlace) {
+    const maxPlace = Math.max(...tied.map(t => Math.max(...t.places.map(p => Math.ceil(p)))));
+
+    for (let threshold = 1; threshold <= maxPlace; threshold++) {
+        let eff = tied.map(t => {
+            let count = t.places.filter(p => Math.ceil(p) <= threshold).length;
+            let sum = t.places.filter(p => p <= threshold).reduce((a, b) => a + b, 0);
+            return { ...t, effCount: count, effSum: sum, threshold };
+        });
+
+        eff.sort((a, b) => {
+            if (a.effCount !== b.effCount) return b.effCount - a.effCount;
+            return a.effSum - b.effSum;
+        });
+
+        let allSame = true;
+        for (let i = 1; i < eff.length; i++) {
+            if (eff[i].effCount !== eff[0].effCount || eff[i].effSum !== eff[0].effSum) {
+                allSame = false; break;
+            }
+        }
+
+        if (!allSame) {
+            return eff.map((e, idx) => ({
+                ...e, finalPlace: startPlace + idx, rule10: true,
+                rule10Details: `КЭ по 1-${threshold}: ${e.effCount} (сумма ${e.effSum})`
             }));
         }
+    }
 
-        // ==================== ОТОБРАЖЕНИЕ ИТОГОВ ====================
-        function showFinalResults() {
-            const container = $('finalResults');
-            const standings = tournament.finalStandings;
-            const finalists = tournament.couples.filter(c => c.active);
+    // Правило 11
+    const avg = startPlace + (tied.length - 1) / 2;
+    return tied.map(t => ({
+        ...t, finalPlace: avg, rule10: true, rule11: true,
+        rule10Details: 'Правило 11: среднее арифметическое'
+    }));
+}
 
-            let html = `<div class="success-box"><strong>Турнир завершён!</strong> 
-                       Участвовало ${tournament.numCouples} пар, в финале — ${finalists.length} пар, 
-                       ${tournament.numDances} танцев, ${tournament.numJudges} судей.</div>`;
+// ==================== ОТОБРАЖЕНИЕ ИТОГОВ ====================
+function showFinalResults() {
+    const container = $('finalResults');
+    const standings = T.finalStandings;
+    const finalists = T.couples.filter(c => c.active);
 
-            // Итоговая таблица (Правило 9)
-            html += `<h3>Итоговая таблица (Правило 9)</h3>`;
-            html += `<div class="table-container"><table><thead><tr><th>Место</th><th>Пара</th>`;
-            tournament.dances.forEach(d => html += `<th>${d.name}</th>`);
-            html += `<th>Сумма</th><th>Итог</th></tr></thead><tbody>`;
+    let html = `<div class="success-box"><strong>Турнир завершён!</strong> 
+        Участвовало ${T.numCouples} пар, в финале — ${finalists.length} пар, ${T.numDances} танцев, ${T.numJudges} судей.</div>`;
 
-            standings.forEach(s => {
-                let placeClass = '';
-                if (s.finalPlace === 1) placeClass = 'place-1';
-                else if (s.finalPlace === 2) placeClass = 'place-2';
-                else if (s.finalPlace === 3) placeClass = 'place-3';
+    // Итоговая таблица
+    html += `<h3>Итоговая таблица</h3>`;
+    html += `<div class="table-container"><table><thead><tr><th>Место</th><th>Пара</th>`;
+    T.dances.forEach(d => html += `<th>${d.name}</th>`);
+    html += `<th>Сумма</th><th>Итог</th></tr></thead><tbody>`;
 
-                html += `<tr class="${placeClass}"><td><strong>${s.finalPlace}</strong></td>`;
-                html += `<td>Пара №${s.coupleNumber}</td>`;
+    for (const s of standings) {
+        let pc = '';
+        if (s.finalPlace === 1) pc = 'place-1';
+        else if (s.finalPlace === 2) pc = 'place-2';
+        else if (s.finalPlace === 3) pc = 'place-3';
 
-                s.places.forEach(p => {
-                    html += `<td>${p}</td>`;
-                });
+        html += `<tr class="${pc}"><td><strong>${s.finalPlace}</strong></td>`;
+        html += `<td>Пара №${s.coupleNumber}</td>`;
+        for (const p of s.places) html += `<td>${p}</td>`;
+        html += `<td class="total-row">${s.sum}</td>`;
+        html += `<td class="final-place">${s.finalPlace}</td></tr>`;
+    }
+    html += `</tbody></table></div>`;
 
-                html += `<td class="total-row">${s.sum}</td>`;
-                html += `<td class="final-place">${s.finalPlace}</td></tr>`;
-            });
+    // Выбывшие
+    const eliminated = T.couples.filter(c => !c.active);
+    if (eliminated.length > 0) {
+        html += `<h3 style="margin-top:30px;">Выбывшие в отборочных турах</h3>`;
+        html += `<div class="table-container"><table><thead><tr><th>Пара</th><th>Статус</th></tr></thead><tbody>`;
+        for (const e of eliminated) {
+            html += `<tr class="eliminated"><td>Пара №${e.number}</td><td>Выбыла в отборочном туре</td></tr>`;
+        }
+        html += `</tbody></table></div>`;
+    }
 
-            html += `</tbody></table></div>`;
+    // Протоколы по танцам
+    html += `<h3 style="margin-top:30px;">Протоколы по танцам</h3>`;
+    T.dances.forEach((d, idx) => {
+        if (T.finalData && T.finalData.results[idx] && T.finalData.marks[idx]) {
+            html += buildSkatingProtocol(T.finalData.results[idx], T.finalData.marks[idx], T.numJudges, d.name);
+        }
+    });
 
-            // Выбывшие в отборочных
-            const eliminated = tournament.couples.filter(c => !c.active);
-            if (eliminated.length > 0) {
-                html += `<h3 style="margin-top: 30px;">Выбывшие в отборочных турах</h3>`;
-                html += `<div class="table-container"><table><thead><tr><th>Пара</th><th>Статус</th></tr></thead><tbody>`;
-                eliminated.forEach(e => {
-                    html += `<tr class="eliminated"><td>Пара №${e.number}</td><td>Выбыла в отборочном туре</td></tr>`;
-                });
-                html += `</tbody></table></div>`;
-            }
+    container.innerHTML = html;
+}
 
-            // Протоколы по танцам
-            html += `<h3 style="margin-top: 30px;">Протоколы по танцам</h3>`;
-            tournament.dances.forEach((dance, idx) => {
-                if (tournament.finalResults && tournament.finalResults.danceResults[idx]) {
-                    html += showDanceProtocol(idx, finalists.length);
-                }
-            });
+// ==================== ЭКСПОРТ ====================
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
 
-            container.innerHTML = html;
+    // Создаём временный div для PDF-версии таблицы
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = '1200px';
+    tempDiv.style.padding = '40px';
+    tempDiv.style.background = 'white';
+    tempDiv.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    document.body.appendChild(tempDiv);
+
+    // Формируем HTML таблицы
+    let html = `<h1 style="color:#667eea;text-align:center;margin-bottom:10px;">${T.name}</h1>`;
+    html += `<p style="text-align:center;color:#666;margin-bottom:30px;">${T.numJudges} судей | ${T.numDances} танцев | ${T.numCouples} участников</p>`;
+
+    html += `<table style="width:100%;border-collapse:collapse;font-size:14px;">`;
+    html += `<thead><tr style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;">`;
+    html += `<th style="padding:12px;border:1px solid #ddd;">Место</th>`;
+    html += `<th style="padding:12px;border:1px solid #ddd;">Пара</th>`;
+    T.dances.forEach(d => html += `<th style="padding:12px;border:1px solid #ddd;">${d.name}</th>`);
+    html += `<th style="padding:12px;border:1px solid #ddd;">Сумма</th>`;
+    html += `<th style="padding:12px;border:1px solid #ddd;">Итог</th></tr></thead><tbody>`;
+
+    T.finalStandings.forEach(s => {
+        let bg = '';
+        if (s.finalPlace === 1) bg = 'background:linear-gradient(135deg,#ffd700,#ffed4a);color:#744210;font-weight:bold;';
+        else if (s.finalPlace === 2) bg = 'background:linear-gradient(135deg,#c0c0c0,#e2e8f0);color:#2d3748;font-weight:bold;';
+        else if (s.finalPlace === 3) bg = 'background:linear-gradient(135deg,#cd7f32,#ed8936);color:white;font-weight:bold;';
+
+        html += `<tr style="${bg}">`;
+        html += `<td style="padding:10px;border:1px solid #ddd;text-align:center;font-weight:bold;">${s.finalPlace}</td>`;
+        html += `<td style="padding:10px;border:1px solid #ddd;text-align:center;">Пара №${s.coupleNumber}</td>`;
+        s.places.forEach(p => html += `<td style="padding:10px;border:1px solid #ddd;text-align:center;">${p}</td>`);
+        html += `<td style="padding:10px;border:1px solid #ddd;text-align:center;font-weight:bold;background:#edf2f7;">${s.sum}</td>`;
+        html += `<td style="padding:10px;border:1px solid #ddd;text-align:center;font-weight:bold;font-size:16px;">${s.finalPlace}</td>`;
+        html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+
+    // Добавляем дату
+    const now = new Date();
+    html += `<p style="text-align:center;color:#999;margin-top:30px;font-size:12px;">`;
+    html += `Сформировано: ${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU')}</p>`;
+
+    tempDiv.innerHTML = html;
+
+    // Делаем скриншот через html2canvas и сохраняем в PDF
+    html2canvas(tempDiv, { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = 297;
+        const pageHeight = 210;
+        const margin = 10;
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = margin;
+
+        doc.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - margin * 2);
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight + margin;
+            doc.addPage();
+            doc.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+            heightLeft -= (pageHeight - margin * 2);
         }
 
-        // ==================== ЭКСПОРТ ====================
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
+        doc.save(`${T.name || 'tournament'}_results.pdf`);
+        document.body.removeChild(tempDiv);
+    });
+}
 
-            doc.setFontSize(18);
-            doc.text(tournament.name, 14, 20);
-            doc.setFontSize(12);
-            doc.text(`Скейтинг-система | ${tournament.numJudges} судей | ${tournament.numDances} танцев`, 14, 28);
-
-            // Итоговая таблица
-            const standings = tournament.finalStandings;
-            const headers = ['Место', 'Пара', ...tournament.dances.map(d => d.name), 'Сумма', 'Итог'];
-
-            const data = standings.map(s => [
-                s.finalPlace.toString(),
-                `Пара №${s.coupleNumber}`,
-                ...s.places.map(p => p.toString()),
-                s.sum.toString(),
-                s.finalPlace.toString()
-            ]);
-
-            doc.autoTable({
-                head: [headers],
-                body: data,
-                startY: 35,
-                theme: 'grid',
-                styles: { fontSize: 10, cellPadding: 2 },
-                headStyles: { fillColor: [102, 126, 234] }
-            });
-
-            doc.save(`${tournament.name || 'tournament'}_results.pdf`);
-        }
-
-        function exportToExcel() {
-            const standings = tournament.finalStandings;
-
-            const wsData = [
-                ['Место', 'Пара', ...tournament.dances.map(d => d.name), 'Сумма', 'Итоговое место']
-            ];
-
-            standings.forEach(s => {
-                wsData.push([
-                    s.finalPlace,
-                    `Пара №${s.coupleNumber}`,
-                    ...s.places,
-                    s.sum,
-                    s.finalPlace
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Итоги');
-
-            XLSX.writeFile(wb, `${tournament.name || 'tournament'}_results.xlsx`);
-        }
-    </script>
+function exportToExcel() {
+    const wsData = [['Место', 'Пара', ...T.dances.map(d => d.name), 'Сумма', 'Итоговое место']];
+    for (const s of T.finalStandings) {
+        wsData.push([s.finalPlace, `Пара №${s.coupleNumber}`, ...s.places, s.sum, s.finalPlace]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Итоги');
+    XLSX.writeFile(wb, `${T.name || 'tournament'}_results.xlsx`);
+}
+</script>
 </body>
 </html>
